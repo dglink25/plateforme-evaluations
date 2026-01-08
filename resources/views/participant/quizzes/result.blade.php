@@ -434,7 +434,7 @@
                                                 <h6 class="mb-0">Correction manuelle requise</h6>
                                             </div>
                                             <div class="card-body">
-                                                <form action="{{ route('quizzes.answers.update', [$quiz, $participation, $question]) }}" method="POST">
+                                                <form action="" method="POST">
                                                     @csrf
                                                     @method('PUT')
                                                     <div class="row g-3">
