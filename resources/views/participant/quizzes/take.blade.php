@@ -1,511 +1,542 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ $quiz->title }}
-            </h2>
-            
-            <!-- Timer -->
-            <div id="timer" class="flex items-center space-x-2">
-                <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span id="time-display" class="text-lg font-bold text-gray-900">
-                    {{ gmdate('H:i:s', $remainingSeconds) }}
-                </span>
-            </div>
-        </div>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Alertes -->
-            <div id="auto-save-alert" class="hidden mb-4 p-3 bg-blue-100 text-blue-700 rounded-lg text-sm">
-                <div class="flex items-center">
-                    <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>Réponses sauvegardées automatiquement</span>
+@section('title', 'Quiz : ' . $quiz->title)
+
+@section('content')
+<div class="container-fluid px-0">
+    <!-- En-tête fixe -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <h5 class="mb-0 fw-bold">{{ $quiz->title }}</h5>
+                    <small class="text-muted">{{ $quiz->questions->count() }} questions • {{ $quiz->duration }} minutes</small>
+                </div>
+                
+                <!-- Timer -->
+                <div id="timer" class="d-flex align-items-center">
+                    <i class="bi bi-clock fs-5 text-danger me-2"></i>
+                    <span id="time-display" class="fs-4 fw-bold text-danger">
+                        {{ gmdate('H:i:s', $remainingSeconds) }}
+                    </span>
                 </div>
             </div>
+        </div>
+    </nav>
 
-            <form id="quiz-form" method="POST" action="{{ route('participant.quizzes.finish', ['quiz' => $quiz, 'participation' => $participation]) }}" 
-                  enctype="multipart/form-data">
-                @csrf
-                
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <!-- Sidebar avec progression -->
-                    <div class="lg:col-span-1">
-                        <div class="bg-white shadow-sm sm:rounded-lg sticky top-6">
-                            <div class="p-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Progression</h3>
-                                
-                                <div class="mb-4">
-                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                                        <span>Questions répondues</span>
-                                        <span id="answered-count">0</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                                    </div>
+    <!-- Contenu principal -->
+    <div class="container pt-5 mt-5">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="sticky-top" style="top: 80px;">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Progression</h6>
+                            
+                            <!-- Barre de progression -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Questions répondues</small>
+                                    <small id="answered-count">0</small>
                                 </div>
-                                
-                                <div class="space-y-2 mb-6">
+                                <div class="progress" style="height: 8px;">
+                                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation des questions -->
+                            <div class="mb-4">
+                                <small class="text-muted d-block mb-2">Navigation rapide</small>
+                                <div class="row g-2" id="question-nav-grid">
                                     @foreach($questions as $index => $question)
-                                        <a href="#question-{{ $question->id }}" 
-                                           class="block p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors question-nav"
-                                           data-question-id="{{ $question->id }}">
-                                            <div class="flex justify-between items-center">
-                                                <div class="flex items-center">
-                                                    <span class="inline-flex items-center justify-center h-6 w-6 text-xs font-medium rounded-full bg-gray-100 text-gray-800 mr-2">
-                                                        {{ $index + 1 }}
-                                                    </span>
-                                                    <span class="text-sm text-gray-700 truncate">
-                                                        {{ Str::limit($question->question_text, 30) }}
-                                                    </span>
+                                        <div class="col-4">
+                                            <a href="#question-{{ $question->id }}" 
+                                               class="d-block text-center p-2 border rounded question-nav"
+                                               data-question-id="{{ $question->id }}"
+                                               title="{{ Str::limit($question->question_text, 30) }}">
+                                                <div class="question-number">{{ $index + 1 }}</div>
+                                                <div class="question-status mt-1">
+                                                    <div class="status-indicator" data-question-id="{{ $question->id }}"></div>
                                                 </div>
-                                                <div class="question-status" data-question-id="{{ $question->id }}">
-                                                    <div class="h-2 w-2 rounded-full bg-gray-300"></div>
-                                                </div>
-                                            </div>
-                                        </a>
+                                            </a>
+                                        </div>
                                     @endforeach
                                 </div>
-                                
-                                <!-- Bouton de soumission -->
-                                <button type="submit" 
-                                        id="submit-btn"
-                                        class="w-full py-3 px-4 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                                    <div class="flex items-center justify-center">
-                                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Soumettre le quiz
-                                    </div>
-                                </button>
-                                
-                                <p class="mt-3 text-xs text-center text-gray-500">
-                                    Le quiz se soumettra automatiquement à la fin du temps.
-                                </p>
                             </div>
+                            
+                            <!-- Bouton de soumission -->
+                            <button type="button" 
+                                    id="submit-btn"
+                                    class="btn btn-success w-100"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#submitModal">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Soumettre le quiz
+                            </button>
+                            
+                            <small class="text-muted d-block mt-2 text-center">
+                                Le quiz se soumettra automatiquement à la fin du temps
+                            </small>
                         </div>
                     </div>
-                    
-                    <!-- Questions -->
-                    <div class="lg:col-span-3">
-                        <div class="bg-white shadow-sm sm:rounded-lg">
-                            <div class="p-6">
-                                @foreach($questions as $index => $question)
-                                    <div id="question-{{ $question->id }}" class="question-container mb-10 pb-10 border-b border-gray-200 last:border-b-0">
-                                        <div class="flex items-start mb-6">
-                                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-800 font-medium mr-3">
-                                                {{ $index + 1 }}
-                                            </span>
-                                            <div class="flex-1">
-                                                <h3 class="text-lg font-medium text-gray-900 mb-4">
-                                                    {{ $question->question_text }}
-                                                </h3>
-                                                
-                                                <!-- Points -->
-                                                <div class="mb-6">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        {{ $question->points }} point(s)
-                                                    </span>
-                                                </div>
-                                                
-                                                <!-- Réponses selon le type -->
-                                                <div class="mt-4">
-                                                    @if($question->type === 'multiple_choice')
-                                                        <div class="space-y-3">
-                                                            @foreach($question->options as $optionIndex => $option)
-                                                                <div class="flex items-center">
+                </div>
+            </div>
+            
+            <!-- Questions -->
+            <div class="col-lg-9">
+                <div class="px-3 px-lg-4">
+                    <!-- Alerte sauvegarde -->
+                    <div id="auto-save-alert" class="alert alert-info alert-dismissible fade show mb-4 d-none" role="alert">
+                        <i class="bi bi-save me-2"></i>
+                        Réponses sauvegardées automatiquement
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <!-- Formulaire -->
+                    <form id="quiz-form" method="POST" action="{{ route('participant.quizzes.finish', ['quiz' => $quiz, 'participation' => $participation]) }}" 
+                          enctype="multipart/form-data">
+                        @csrf
+                        
+                        @foreach($questions as $index => $question)
+                            <div id="question-{{ $question->id }}" class="card mb-4 question-container">
+                                <div class="card-body">
+                                    <!-- En-tête question -->
+                                    <div class="d-flex align-items-start mb-4">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                             style="width: 40px; height: 40px; flex-shrink: 0;">
+                                            {{ $index + 1 }}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-3">{{ $question->question_text }}</h5>
+                                            
+                                            <div class="d-flex align-items-center gap-3 mb-4">
+                                                <span class="badge bg-primary">
+                                                    {{ $question->points }} point(s)
+                                                </span>
+                                                <span class="badge bg-secondary">
+                                                    {{ ucfirst(str_replace('_', ' ', $question->type)) }}
+                                                </span>
+                                            </div>
+                                            
+                                            <!-- Réponses -->
+                                            <div class="mt-3">
+                                                @if($question->type === 'multiple_choice')
+                                                    <div class="list-group list-group-flush">
+                                                        @foreach($question->options as $optionIndex => $option)
+                                                            <label class="list-group-item list-group-item-action">
+                                                                <div class="form-check">
                                                                     <input type="radio" 
                                                                            id="question-{{ $question->id }}-option-{{ $optionIndex }}"
                                                                            name="answers[{{ $question->id }}]"
                                                                            value="{{ $optionIndex }}"
-                                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 question-input"
+                                                                           class="form-check-input question-input"
                                                                            data-question-id="{{ $question->id }}"
                                                                            {{ optional($question->answers->first())->answer_content == $optionIndex ? 'checked' : '' }}>
-                                                                    <label for="question-{{ $question->id }}-option-{{ $optionIndex }}" 
-                                                                           class="ml-3 block text-gray-700">
-                                                                        <span class="inline-block mr-2 font-medium">{{ chr(65 + $optionIndex) }}.</span>
-                                                                        {{ $option }}
+                                                                    <label class="form-check-label d-flex align-items-center" 
+                                                                           for="question-{{ $question->id }}-option-{{ $optionIndex }}">
+                                                                        <span class="fw-bold me-3">{{ chr(65 + $optionIndex) }}.</span>
+                                                                        <span>{{ $option }}</span>
                                                                     </label>
                                                                 </div>
-                                                            @endforeach
-                                                        </div>
-                                                        
-                                                    @elseif($question->type === 'multiple_answer')
-                                                        <div class="space-y-3">
-                                                            @foreach($question->options as $optionIndex => $option)
-                                                                <div class="flex items-center">
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                    
+                                                @elseif($question->type === 'multiple_answer')
+                                                    <div class="list-group list-group-flush">
+                                                        @foreach($question->options as $optionIndex => $option)
+                                                            <label class="list-group-item">
+                                                                <div class="form-check">
                                                                     <input type="checkbox" 
                                                                            id="question-{{ $question->id }}-option-{{ $optionIndex }}"
                                                                            name="answers[{{ $question->id }}][]"
                                                                            value="{{ $optionIndex }}"
-                                                                           class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 question-input"
+                                                                           class="form-check-input question-input"
                                                                            data-question-id="{{ $question->id }}"
                                                                            {{ in_array($optionIndex, (array)optional($question->answers->first())->answer_content ?? []) ? 'checked' : '' }}>
-                                                                    <label for="question-{{ $question->id }}-option-{{ $optionIndex }}" 
-                                                                           class="ml-3 block text-gray-700">
-                                                                        <span class="inline-block mr-2 font-medium">{{ chr(65 + $optionIndex) }}.</span>
-                                                                        {{ $option }}
+                                                                    <label class="form-check-label d-flex align-items-center" 
+                                                                           for="question-{{ $question->id }}-option-{{ $optionIndex }}">
+                                                                        <span class="fw-bold me-3">{{ chr(65 + $optionIndex) }}.</span>
+                                                                        <span>{{ $option }}</span>
                                                                     </label>
                                                                 </div>
-                                                            @endforeach
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                    
+                                                @elseif($question->type === 'text')
+                                                    <div>
+                                                        <textarea name="answers[{{ $question->id }}]"
+                                                                  rows="5"
+                                                                  class="form-control question-input"
+                                                                  data-question-id="{{ $question->id }}"
+                                                                  placeholder="Tapez votre réponse ici...">{{ optional($question->answers->first())->answer_content ?? '' }}</textarea>
+                                                    </div>
+                                                    
+                                                @elseif($question->type === 'file')
+                                                    <div>
+                                                        <div class="mb-3">
+                                                            <input type="file" 
+                                                                   name="files[{{ $question->id }}]"
+                                                                   class="form-control question-input"
+                                                                   data-question-id="{{ $question->id }}"
+                                                                   accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.txt">
                                                         </div>
                                                         
-                                                    @elseif($question->type === 'text')
-                                                        <div>
-                                                            <textarea name="answers[{{ $question->id }}]"
-                                                                      rows="4"
-                                                                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 question-input"
-                                                                      data-question-id="{{ $question->id }}"
-                                                                      placeholder="Tapez votre réponse ici...">{{ optional($question->answers->first())->answer_content ?? '' }}</textarea>
-                                                        </div>
-                                                        
-                                                    @elseif($question->type === 'file')
-                                                        <div class="space-y-4">
-                                                            <div>
-                                                                <input type="file" 
-                                                                       name="files[{{ $question->id }}]"
-                                                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 question-input"
-                                                                       data-question-id="{{ $question->id }}"
-                                                                       accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png">
-                                                            </div>
-                                                            
-                                                            @if($question->answers->first() && $question->answers->first()->file_path)
-                                                                <div class="p-3 bg-green-50 border border-green-200 rounded">
-                                                                    <div class="flex items-center">
-                                                                        <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                        </svg>
-                                                                        <span class="text-green-700">
-                                                                            Fichier déjà uploadé: 
-                                                                            <a href="{{ Storage::url($question->answers->first()->file_path) }}" 
-                                                                               target="_blank" 
-                                                                               class="underline hover:text-green-800">
-                                                                                Télécharger
-                                                                            </a>
-                                                                        </span>
-                                                                    </div>
+                                                        @if($question->answers->first() && $question->answers->first()->file_path)
+                                                            <div class="alert alert-success d-flex align-items-center">
+                                                                <i class="bi bi-check-circle-fill me-2"></i>
+                                                                <div>
+                                                                    Fichier déjà uploadé: 
+                                                                    <a href="{{ Storage::url($question->answers->first()->file_path) }}" 
+                                                                       target="_blank" 
+                                                                       class="alert-link">
+                                                                        Télécharger
+                                                                    </a>
                                                                 </div>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
-                                @endforeach
+                                    
+                                    <!-- Navigation entre questions -->
+                                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                        @if($index > 0)
+                                            <a href="#question-{{ $questions[$index - 1]->id }}" 
+                                               class="btn btn-outline-secondary btn-prev">
+                                                <i class="bi bi-chevron-left me-2"></i>Question précédente
+                                            </a>
+                                        @else
+                                            <div></div>
+                                        @endif
+                                        
+                                        @if($index < $questions->count() - 1)
+                                            <a href="#question-{{ $questions[$index + 1]->id }}" 
+                                               class="btn btn-primary btn-next">
+                                                Question suivante <i class="bi bi-chevron-right ms-2"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        @endforeach
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+</div>
 
-    @push('scripts')
-    <script>
-        // Initialiser le timer
-        let remainingSeconds = {{ $remainingSeconds }};
-        let timerInterval;
-        let autoSaveInterval;
-        let hasSubmitted = false;
+<!-- Modal de confirmation -->
+<div class="modal fade" id="submitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la soumission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir soumettre votre quiz ?</p>
+                <p class="text-muted small">Cette action est irréversible. Assurez-vous d'avoir répondu à toutes les questions.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" id="confirm-submit" class="btn btn-success">Soumettre</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Formatage du temps
-        function formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            
-            if (hours > 0) {
-                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }
-            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+@push('scripts')
+<script>
+    // Variables globales
+    let remainingSeconds = {{ $remainingSeconds }};
+    let timerInterval;
+    let autoSaveInterval;
+    let hasSubmitted = false;
+    let saveQueue = [];
+
+    // Formatage du temps
+    function formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        if (hours > 0) {
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
+        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
 
-        // Mettre à jour l'affichage du timer
-        function updateTimerDisplay() {
-            document.getElementById('time-display').textContent = formatTime(remainingSeconds);
-            
-            // Changer la couleur quand il reste peu de temps
-            if (remainingSeconds <= 300) { // 5 minutes
-                document.getElementById('timer').classList.add('text-red-600');
-            }
+    // Mettre à jour l'affichage du timer
+    function updateTimerDisplay() {
+        document.getElementById('time-display').textContent = formatTime(remainingSeconds);
+        
+        // Changer la couleur quand il reste peu de temps
+        const timerElement = document.getElementById('timer');
+        if (remainingSeconds <= 300) { // 5 minutes
+            timerElement.classList.remove('text-danger');
+            timerElement.classList.add('text-danger');
         }
+    }
 
-        // Démarrer le timer
-        function startTimer() {
+    // Démarrer le timer
+    function startTimer() {
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            remainingSeconds--;
             updateTimerDisplay();
             
-            timerInterval = setInterval(() => {
-                remainingSeconds--;
-                updateTimerDisplay();
-                
-                // Soumettre automatiquement quand le temps est écoulé
-                if (remainingSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    clearInterval(autoSaveInterval);
-                    submitQuizAutomatically();
-                }
-            }, 1000);
-        }
-
-        // Soumettre automatiquement le quiz
-        function submitQuizAutomatically() {
-            if (hasSubmitted) return;
-            
-            hasSubmitted = true;
-            
-            // Sauvegarder les réponses une dernière fois
-            saveAnswers().then(() => {
-                // Soumettre le formulaire
-                document.getElementById('quiz-form').submit();
-            }).catch(error => {
-                console.error('Erreur lors de la sauvegarde automatique:', error);
-                document.getElementById('quiz-form').submit();
-            });
-        }
-
-        // Sauvegarder les réponses automatiquement
-        function setupAutoSave() {
-            // Sauvegarder toutes les 30 secondes
-            autoSaveInterval = setInterval(() => {
-                saveAnswers();
-            }, 30000); // 30 secondes
-        }
-
-        // Sauvegarder les réponses via AJAX
-        async function saveAnswers() {
-            const form = document.getElementById('quiz-form');
-            const formData = new FormData(form);
-            
-            // Ne pas inclure le bouton de soumission
-            formData.delete('_token');
-            formData.delete('_method');
-            
-            try {
-                const response = await fetch('{{ route("participant.quizzes.submit", ["quiz" => $quiz, "participation" => $participation]) }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showAutoSaveAlert();
-                    updateProgress();
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('Erreur lors de la sauvegarde:', error);
-                return { success: false, message: 'Erreur réseau' };
+            // Soumettre automatiquement quand le temps est écoulé
+            if (remainingSeconds <= 0) {
+                clearInterval(timerInterval);
+                clearInterval(autoSaveInterval);
+                submitQuizAutomatically();
             }
-        }
+        }, 1000);
+    }
 
-        // Afficher l'alerte de sauvegarde automatique
-        function showAutoSaveAlert() {
-            const alert = document.getElementById('auto-save-alert');
-            alert.classList.remove('hidden');
-            alert.classList.add('flex');
-            
-            setTimeout(() => {
-                alert.classList.remove('flex');
-                alert.classList.add('hidden');
-            }, 3000);
-        }
+    // Soumettre automatiquement le quiz
+    function submitQuizAutomatically() {
+        if (hasSubmitted) return;
+        
+        hasSubmitted = true;
+        
+        // Sauvegarder les réponses une dernière fois
+        saveAnswers().then(() => {
+            // Soumettre le formulaire
+            document.getElementById('quiz-form').submit();
+        }).catch(error => {
+            console.error('Erreur lors de la sauvegarde automatique:', error);
+            document.getElementById('quiz-form').submit();
+        });
+    }
 
-        // Mettre à jour la barre de progression
-        function updateProgress() {
-            const answeredInputs = document.querySelectorAll('.question-input[type="radio"]:checked, .question-input[type="checkbox"]:checked, .question-input[type="text"]:not(:empty), .question-input[type="textarea"]:not(:empty), .question-input[type="file"]');
-            const totalQuestions = {{ $questions->count() }};
-            const answeredCount = answeredInputs.length;
-            
-            // Compter les textareas avec du contenu
-            const textAreas = document.querySelectorAll('.question-input[type="textarea"], textarea.question-input');
-            textAreas.forEach(textarea => {
-                if (textarea.value.trim() !== '') {
-                    answeredCount++;
-                }
+    // Configuration de la sauvegarde automatique
+    function setupAutoSave() {
+        // Sauvegarder toutes les 30 secondes
+        autoSaveInterval = setInterval(() => {
+            if (saveQueue.length === 0) {
+                saveAllAnswers();
+            }
+        }, 30000);
+    }
+
+    // Sauvegarder toutes les réponses
+    async function saveAllAnswers() {
+        const form = document.getElementById('quiz-form');
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch('{{ route("participant.quizzes.submit", ["quiz" => $quiz, "participation" => $participation]) }}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
             });
             
-            // Mettre à jour le compteur
-            document.getElementById('answered-count').textContent = answeredCount;
+            const data = await response.json();
             
-            // Mettre à jour la barre de progression
-            const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-            document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+            if (data.success) {
+                showAutoSaveAlert();
+                updateProgress();
+            }
             
-            // Mettre à jour les indicateurs de question
-            document.querySelectorAll('.question-nav').forEach(nav => {
-                const questionId = nav.dataset.questionId;
-                const questionInputs = document.querySelectorAll(`.question-input[data-question-id="${questionId}"]`);
-                let isAnswered = false;
-                
-                questionInputs.forEach(input => {
-                    if (input.type === 'radio' || input.type === 'checkbox') {
-                        if (input.checked) isAnswered = true;
-                    } else if (input.type === 'file') {
-                        if (input.files.length > 0) isAnswered = true;
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde:', error);
+            return { success: false, message: 'Erreur réseau' };
+        }
+    }
+
+    // Sauvegarder une réponse spécifique
+    async function saveAnswer(questionId) {
+        if (saveQueue.includes(questionId)) return;
+        
+        saveQueue.push(questionId);
+        
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        
+        // Collecter les réponses pour cette question
+        const questionInputs = document.querySelectorAll(`.question-input[data-question-id="${questionId}"]`);
+        let hasAnswer = false;
+        
+        questionInputs.forEach(input => {
+            if (input.type === 'radio' || input.type === 'checkbox') {
+                if (input.checked) {
+                    if (input.type === 'checkbox') {
+                        formData.append(`answers[${questionId}][]`, input.value);
                     } else {
-                        if (input.value.trim() !== '') isAnswered = true;
+                        formData.append(`answers[${questionId}]`, input.value);
                     }
-                });
-                
-                const statusIndicator = nav.querySelector('.question-status div');
-                if (isAnswered) {
-                    statusIndicator.classList.remove('bg-gray-300');
-                    statusIndicator.classList.add('bg-green-500');
-                } else {
-                    statusIndicator.classList.remove('bg-green-500');
-                    statusIndicator.classList.add('bg-gray-300');
+                    hasAnswer = true;
                 }
-            });
-        }
-
-        // Écouter les changements dans les réponses
-        document.addEventListener('DOMContentLoaded', function() {
-            // Démarrer le timer
-            startTimer();
-            
-            // Démarrer la sauvegarde automatique
-            setupAutoSave();
-            
-            // Initialiser la progression
-            updateProgress();
-            
-            // Écouter les changements dans les réponses
-            document.querySelectorAll('.question-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    // Sauvegarder cette réponse
-                    saveAnswersForQuestion(this.dataset.questionId);
-                    updateProgress();
-                });
-                
-                // Pour les textareas
-                if (input.tagName === 'TEXTAREA') {
-                    input.addEventListener('input', debounce(function() {
-                        saveAnswersForQuestion(this.dataset.questionId);
-                        updateProgress();
-                    }, 1000));
+            } else if (input.type === 'file') {
+                if (input.files.length > 0) {
+                    formData.append(`files[${questionId}]`, input.files[0]);
+                    hasAnswer = true;
                 }
-            });
-            
-            // Empêcher la soumission multiple
-            document.getElementById('quiz-form').addEventListener('submit', function(e) {
-                if (hasSubmitted) {
-                    e.preventDefault();
-                    return false;
+            } else {
+                if (input.value.trim() !== '') {
+                    formData.append(`answers[${questionId}]`, input.value);
+                    hasAnswer = true;
                 }
-                
-                const confirmSubmit = confirm('Êtes-vous sûr de vouloir soumettre votre quiz ? Cette action est irréversible.');
-                if (!confirmSubmit) {
-                    e.preventDefault();
-                    return false;
-                }
-                
-                hasSubmitted = true;
-                document.getElementById('submit-btn').disabled = true;
-                document.getElementById('submit-btn').innerHTML = `
-                    <div class="flex items-center justify-center">
-                        <svg class="animate-spin h-5 w-5 mr-2 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Soumission en cours...
-                    </div>
-                `;
-            });
-            
-            // Navigation entre questions
-            document.querySelectorAll('.question-nav').forEach(nav => {
-                nav.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const questionId = this.dataset.questionId;
-                    const questionElement = document.getElementById(`question-${questionId}`);
-                    
-                    if (questionElement) {
-                        questionElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
+            }
         });
         
-        // Sauvegarder les réponses pour une question spécifique
-        async function saveAnswersForQuestion(questionId) {
-            const formData = new FormData();
+        // Ne pas sauvegarder si aucune réponse
+        if (!hasAnswer) {
+            saveQueue = saveQueue.filter(id => id !== questionId);
+            return;
+        }
+        
+        try {
+            const response = await fetch('{{ route("participant.quizzes.submit", ["quiz" => $quiz, "participation" => $participation]) }}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
             
-            // Ajouter le token CSRF
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            const data = await response.json();
             
-            // Ajouter les réponses pour cette question
-            const questionInputs = document.querySelectorAll(`.question-input[data-question-id="${questionId}"]`);
+            if (data.success) {
+                updateProgress();
+            }
+            
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde:', error);
+        } finally {
+            saveQueue = saveQueue.filter(id => id !== questionId);
+        }
+    }
+
+    // Afficher l'alerte de sauvegarde
+    function showAutoSaveAlert() {
+        const alert = document.getElementById('auto-save-alert');
+        alert.classList.remove('d-none');
+        
+        setTimeout(() => {
+            alert.classList.add('d-none');
+        }, 3000);
+    }
+
+    // Mettre à jour la progression
+    function updateProgress() {
+        let answeredCount = 0;
+        const totalQuestions = {{ $questions->count() }};
+        
+        // Compter les questions répondues
+        document.querySelectorAll('.question-container').forEach(container => {
+            const questionId = container.id.replace('question-', '');
+            const questionInputs = container.querySelectorAll('.question-input');
+            let isAnswered = false;
             
             questionInputs.forEach(input => {
                 if (input.type === 'radio' || input.type === 'checkbox') {
-                    if (input.checked) {
-                        if (input.type === 'checkbox') {
-                            if (!formData.has(`answers[${questionId}][]`)) {
-                                formData.append(`answers[${questionId}][]`, input.value);
-                            } else {
-                                // Pour les checkboxes, on doit gérer les valeurs multiples
-                                const values = formData.getAll(`answers[${questionId}][]`);
-                                values.push(input.value);
-                                formData.delete(`answers[${questionId}][]`);
-                                values.forEach(val => formData.append(`answers[${questionId}][]`, val));
-                            }
-                        } else {
-                            formData.append(`answers[${questionId}]`, input.value);
-                        }
-                    }
+                    if (input.checked) isAnswered = true;
                 } else if (input.type === 'file') {
-                    if (input.files.length > 0) {
-                        formData.append(`files[${questionId}]`, input.files[0]);
-                    }
+                    if (input.files.length > 0) isAnswered = true;
                 } else {
-                    formData.append(`answers[${questionId}]`, input.value);
+                    if (input.value.trim() !== '') isAnswered = true;
                 }
             });
             
-            try {
-                await fetch('{{ route("participant.quizzes.submit", ["quiz" => $quiz, "participation" => $participation]) }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-                
-                showAutoSaveAlert();
-            } catch (error) {
-                console.error('Erreur lors de la sauvegarde:', error);
+            if (isAnswered) {
+                answeredCount++;
+                updateQuestionStatus(questionId, true);
+            } else {
+                updateQuestionStatus(questionId, false);
             }
-        }
+        });
         
-        // Fonction debounce pour limiter les appels
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+        // Mettre à jour le compteur et la barre de progression
+        document.getElementById('answered-count').textContent = answeredCount;
+        const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+        document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+    }
+
+    // Mettre à jour le statut d'une question
+    function updateQuestionStatus(questionId, isAnswered) {
+        const statusIndicator = document.querySelector(`.status-indicator[data-question-id="${questionId}"]`);
+        if (statusIndicator) {
+            statusIndicator.className = isAnswered ? 'status-indicator answered' : 'status-indicator';
         }
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Démarrer le timer
+        startTimer();
         
-        // Empêcher la fermeture de la page pendant le quiz
+        // Démarrer la sauvegarde automatique
+        setupAutoSave();
+        
+        // Initialiser la progression
+        updateProgress();
+        
+        // Écouter les changements dans les réponses
+        document.querySelectorAll('.question-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const questionId = this.dataset.questionId;
+                saveAnswer(questionId);
+                updateProgress();
+            });
+            
+            // Pour les textareas
+            if (input.tagName === 'TEXTAREA') {
+                input.addEventListener('input', debounce(function() {
+                    const questionId = this.dataset.questionId;
+                    saveAnswer(questionId);
+                    updateProgress();
+                }, 1000));
+            }
+        });
+        
+        // Navigation entre questions
+        document.querySelectorAll('.question-nav, .btn-prev, .btn-next').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href')?.startsWith('#')) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        
+                        // Mettre à jour l'URL sans rechargement
+                        history.pushState(null, '', targetId);
+                    }
+                }
+            });
+        });
+        
+        // Confirmation de soumission
+        document.getElementById('confirm-submit').addEventListener('click', function() {
+            if (hasSubmitted) return;
+            
+            hasSubmitted = true;
+            document.getElementById('submit-btn').disabled = true;
+            
+            // Sauvegarder avant de soumettre
+            saveAllAnswers().then(() => {
+                document.getElementById('quiz-form').submit();
+            });
+        });
+        
+        // Empêcher la fermeture de la page
         window.addEventListener('beforeunload', function(e) {
             if (!hasSubmitted && remainingSeconds > 0) {
                 e.preventDefault();
@@ -513,31 +544,87 @@
                 return e.returnValue;
             }
         });
-    </script>
-    @endpush
+        
+        // Gestion des fichiers
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const fileName = this.files[0]?.name || 'Aucun fichier sélectionné';
+                const label = this.nextElementSibling?.querySelector('.form-label') || 
+                              this.parentElement.nextElementSibling;
+                
+                if (label) {
+                    label.textContent = `Fichier sélectionné : ${fileName}`;
+                }
+            });
+        });
+    });
 
-    @push('styles')
-    <style>
-        .question-nav {
-            transition: all 0.2s ease;
-        }
-        
-        .question-nav:hover {
-            transform: translateY(-2px);
-        }
-        
-        .question-status div {
-            transition: background-color 0.3s ease;
-        }
-        
-        #progress-bar {
-            transition: width 0.5s ease;
-        }
-        
-        .sticky {
-            position: -webkit-sticky;
-            position: sticky;
-        }
-    </style>
-    @endpush
-</x-app-layout> 
+    // Fonction debounce
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+</script>
+
+<style>
+/* Styles spécifiques */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #dee2e6;
+    margin: 0 auto;
+}
+
+.status-indicator.answered {
+    background-color: #198754;
+}
+
+.question-nav {
+    text-decoration: none;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.question-nav:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.question-number {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+#timer {
+    transition: color 0.3s ease;
+}
+
+.btn-next, .btn-prev {
+    transition: all 0.2s ease;
+}
+
+.btn-next:hover, .btn-prev:hover {
+    transform: translateY(-1px);
+}
+
+/* Scroll doux */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Style pour les questions actives */
+.question-container:target {
+    border-left: 4px solid #0d6efd;
+    padding-left: 1rem;
+}
+</style>
+@endpush
+@endsection

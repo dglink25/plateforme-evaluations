@@ -1,183 +1,182 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Questions : {{ $quiz->title }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    @include('components.quizzes-nav')
+@section('title', 'Questions : ' . $quiz->title)
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    @if(session('success'))
-                        <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">
-                            {{ session('success') }}
-                        </div>
-                    @endif
+@section('header', 'Questions : ' . $quiz->title)
 
-                    <div class="mb-6 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-900">
-                                Liste des questions ({{ $questions->count() }})
-                            </h3>
-                            <p class="text-sm text-gray-500">
-                                Durée du quiz : {{ $quiz->duration }} minutes
-                            </p>
-                        </div>
-                        <div class="space-x-2">
-                            <a href="{{ route('quizzes.index') }}" 
-                               class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                                Retour aux quizzes
-                            </a>
-                            <a href="{{ route('questions.create', $quiz) }}" 
-                               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                + Ajouter une question
-                            </a>
-                        </div>
-                    </div>
+@section('content')
+<div class="container py-4">
+    <!-- Navigation des quizzes -->
+    <nav class="nav nav-pills nav-fill mb-4 bg-light p-3 rounded">
+        <a class="nav-link" href="{{ route('quizzes.index') }}">
+            <i class="bi bi-list-check me-2"></i>Mes Évaluations
+        </a>
+        <a class="nav-link active" href="#">
+            <i class="bi bi-question-circle me-2"></i>Questions
+        </a>
+        <a class="nav-link" href="{{ route('participant.quizzes.index') }}">
+            <i class="bi bi-clock me-2"></i>Passer un Quiz
+        </a>
+    </nav>
 
-                    @if($questions->isEmpty())
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune question</h3>
-                            <p class="mt-1 text-sm text-gray-500">
-                                Commencez par ajouter votre première question.
-                            </p>
-                            <div class="mt-6">
-                                <a href="{{ route('questions.create', $quiz) }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Ajouter une question
-                                </a>
-                            </div>
-                        </div>
-                    @else
-                        <div class="space-y-6">
-                            @foreach($questions as $index => $question)
-                                <div class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div class="flex-1">
-                                            <div class="flex items-center space-x-3">
-                                                <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-800 font-medium">
-                                                    {{ $index + 1 }}
-                                                </span>
-                                                <div>
-                                                    <h4 class="text-lg font-medium text-gray-900">
-                                                        {{ $question->question_text }}
-                                                    </h4>
-                                                    <div class="flex items-center space-x-4 mt-1">
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                            @if($question->type === 'multiple_choice') bg-blue-100 text-blue-800
-                                                            @elseif($question->type === 'multiple_answer') bg-purple-100 text-purple-800
-                                                            @elseif($question->type === 'text') bg-green-100 text-green-800
-                                                            @else bg-yellow-100 text-yellow-800 @endif">
-                                                            @switch($question->type)
-                                                                @case('multiple_choice')
-                                                                    QCM (1 réponse)
-                                                                @break
-                                                                @case('multiple_answer')
-                                                                    Réponses multiples
-                                                                @break
-                                                                @case('text')
-                                                                    Réponse texte
-                                                                @break
-                                                                @case('file')
-                                                                    Fichier
-                                                                @break
-                                                            @endswitch
-                                                        </span>
-                                                        <span class="text-sm text-gray-500">
-                                                            {{ $question->points }} point(s)
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            @if($question->options && in_array($question->type, ['multiple_choice', 'multiple_answer']))
-                                                <div class="mt-4 ml-11">
-                                                    <p class="text-sm font-medium text-gray-700 mb-2">Options :</p>
-                                                    <ul class="space-y-2">
-                                                        @foreach($question->options as $optionIndex => $option)
-                                                            <li class="flex items-center">
-                                                                <span class="inline-block w-6 h-6 mr-2 text-center text-sm 
-                                                                    @if(($question->type === 'multiple_choice' && $question->correct_answer == $optionIndex) ||
-                                                                        ($question->type === 'multiple_answer' && in_array($optionIndex, $question->correct_answer)))
-                                                                        bg-green-100 text-green-800 border border-green-300 rounded
-                                                                    @else
-                                                                        bg-gray-100 text-gray-800 border border-gray-300 rounded
-                                                                    @endif">
-                                                                    {{ chr(65 + $optionIndex) }}
-                                                                </span>
-                                                                <span class="text-gray-700">{{ $option }}</span>
-                                                                @if(($question->type === 'multiple_choice' && $question->correct_answer == $optionIndex) ||
-                                                                    ($question->type === 'multiple_answer' && in_array($optionIndex, $question->correct_answer)))
-                                                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                                        ✓ Correct
-                                                                    </span>
-                                                                @endif
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
-                                            @endif
-                                            
-                                            @if($question->type === 'text' && isset($question->correct_answer['text']))
-                                                <div class="mt-4 ml-11">
-                                                    <p class="text-sm font-medium text-gray-700 mb-1">Réponse modèle :</p>
-                                                    <p class="text-gray-600 bg-gray-50 p-3 rounded border border-gray-200">
-                                                        {{ $question->correct_answer['text'] }}
-                                                    </p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        
-                                        <div class="flex space-x-2">
-                                            <a href="{{ route('questions.edit', [$quiz, $question]) }}" 
-                                               class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-sm">
-                                                Modifier
-                                            </a>
-                                            <form action="{{ route('questions.destroy', [$quiz, $question]) }}" 
-                                                  method="POST" 
-                                                  onsubmit="return confirm('Supprimer cette question ?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm">
-                                                    Supprimer
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm text-blue-800">
-                                        Total des points : <span class="font-bold">{{ $questions->sum('points') }}</span>
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm text-blue-800">
-                                        Temps estimé par question : 
-                                        <span class="font-bold">
-                                            {{ round($quiz->duration / max($questions->count(), 1), 1) }} min
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <!-- En-tête -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="card-title mb-1">{{ $quiz->title }}</h5>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-clock me-1"></i>{{ $quiz->duration }} minutes • 
+                        <i class="bi bi-question-circle me-1 ms-3"></i>{{ $questions->count() }} questions
+                    </p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{{ route('quizzes.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Retour
+                    </a>
+                    <a href="{{ route('questions.create', $quiz) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Ajouter une question
+                    </a>
                 </div>
             </div>
+
+            @if($questions->isEmpty())
+                <div class="text-center py-5">
+                    <i class="bi bi-question-circle display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucune question</h5>
+                    <p class="text-muted mb-4">Commencez par ajouter votre première question.</p>
+                    <a href="{{ route('questions.create', $quiz) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Ajouter une question
+                    </a>
+                </div>
+            @else
+                <!-- Liste des questions -->
+                <div class="mb-4">
+                    @foreach($questions as $index => $question)
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="d-flex align-items-start flex-grow-1">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 36px; height: 36px; min-width: 36px; margin-right: 12px;">
+                                            {{ $index + 1 }}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-semibold mb-1">{{ $question->question_text }}</h6>
+                                            <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                                                <span class="badge 
+                                                    @if($question->type === 'multiple_choice') bg-primary
+                                                    @elseif($question->type === 'multiple_answer') bg-purple
+                                                    @elseif($question->type === 'text') bg-success
+                                                    @else bg-warning @endif">
+                                                    @switch($question->type)
+                                                        @case('multiple_choice') QCM (1 réponse) @break
+                                                        @case('multiple_answer') Réponses multiples @break
+                                                        @case('text') Réponse texte @break
+                                                        @case('file') Fichier @break
+                                                    @endswitch
+                                                </span>
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-star me-1"></i>{{ $question->points }} point(s)
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('questions.edit', [$quiz, $question]) }}" 
+                                           class="btn btn-sm btn-outline-warning"
+                                           title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="confirmDelete('{{ route('questions.destroy', [$quiz, $question]) }}', 'cette question')"
+                                                title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                @if($question->options && in_array($question->type, ['multiple_choice', 'multiple_answer']))
+                                    <div class="mt-3 ms-5">
+                                        <p class="fw-semibold text-muted mb-2">Options :</p>
+                                        <div class="row g-2">
+                                            @foreach($question->options as $optionIndex => $option)
+                                                <div class="col-md-6">
+                                                    <div class="border rounded p-2 
+                                                        @if(($question->type === 'multiple_choice' && $question->correct_answer == $optionIndex) ||
+                                                            ($question->type === 'multiple_answer' && in_array($optionIndex, $question->correct_answer)))
+                                                            border-success bg-success bg-opacity-10
+                                                        @endif">
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="badge bg-secondary me-2">{{ chr(65 + $optionIndex) }}</span>
+                                                            <span class="flex-grow-1">{{ $option }}</span>
+                                                            @if(($question->type === 'multiple_choice' && $question->correct_answer == $optionIndex) ||
+                                                                ($question->type === 'multiple_answer' && in_array($optionIndex, $question->correct_answer)))
+                                                                <span class="badge bg-success ms-2">
+                                                                    <i class="bi bi-check-lg"></i> Correct
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($question->type === 'text' && isset($question->correct_answer['text']))
+                                    <div class="mt-3 ms-5">
+                                        <p class="fw-semibold text-muted mb-2">Réponse modèle :</p>
+                                        <div class="bg-light border rounded p-3">
+                                            <p class="mb-0">{{ $question->correct_answer['text'] }}</p>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Résumé -->
+                <div class="alert alert-primary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-info-circle me-2"></i>
+                            Total des points : <strong>{{ $questions->sum('points') }}</strong>
+                        </div>
+                        <div>
+                            Temps estimé par question : 
+                            <strong>{{ round($quiz->duration / max($questions->count(), 1), 1) }} min</strong>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
-</x-app-layout>
+</div>
+
+<script>
+function confirmDelete(url, itemName) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${itemName} ?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.innerHTML = `
+            @csrf
+            @method('DELETE')
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+@endsection

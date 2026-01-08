@@ -1,111 +1,134 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Mes Évaluations
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    @include('components.quizzes-nav')
+@section('title', 'Mes Évaluations')
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    @if(session('success'))
-                        <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">
-                            {{ session('success') }}
-                        </div>
-                    @endif
+@section('header', 'Mes Évaluations')
 
-                    <div class="mb-4">
-                        <a href="{{ route('quizzes.create') }}" 
-                           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                            + Nouvelle Évaluation
-                        </a>
-                    </div>
+@section('content')
+<div class="container py-4">
+    <!-- Navigation des quizzes -->
+    <nav class="nav nav-pills nav-fill mb-4 bg-light p-3 rounded">
+        <a class="nav-link active" href="{{ route('quizzes.index') }}">
+            <i class="bi bi-list-check me-2"></i>Mes Évaluations
+        </a>
+        <a class="nav-link" href="{{ route('participant.quizzes.index') }}">
+            <i class="bi bi-clock me-2"></i>Passer un Quiz
+        </a>
+    </nav>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="card-title mb-0">Liste de vos évaluations</h5>
+                <a href="{{ route('quizzes.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Nouvelle Évaluation
+                </a>
+            </div>
+
+            @if($quizzes->isEmpty())
+                <div class="text-center py-5">
+                    <i class="bi bi-clipboard display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucune évaluation créée</h5>
+                    <p class="text-muted">Commencez par créer votre première évaluation.</p>
+                    <a href="{{ route('quizzes.create') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-2"></i>Créer ma première évaluation
+                    </a>
+                </div>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Titre</th>
+                                <th>Durée</th>
+                                <th>Questions</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($quizzes as $quiz)
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Titre
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Durée
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Questions
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Statut
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($quizzes as $quiz)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $quiz->title }}
+                                    <td>
+                                        <div class="fw-semibold">{{ $quiz->title }}</div>
+                                        @if($quiz->description)
+                                            <div class="text-muted small mt-1">
+                                                {{ Str::limit($quiz->description, 50) }}
                                             </div>
-                                            @if($quiz->description)
-                                                <div class="text-sm text-gray-500">
-                                                    {{ Str::limit($quiz->description, 50) }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $quiz->duration }} min</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $quiz->questions_count ?? 0 }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {{ $quiz->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                                {{ $quiz->is_published ? 'Publié' : 'Brouillon' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ $quiz->duration }} min
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ $quiz->questions_count ?? 0 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $quiz->is_published ? 'bg-success' : 'bg-warning' }}">
+                                            {{ $quiz->is_published ? 'Publié' : 'Brouillon' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
                                             <a href="{{ route('quizzes.questions', $quiz) }}" 
-                                               class="text-blue-600 hover:text-blue-900 mr-3">
-                                                Questions
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Voir les questions">
+                                                <i class="bi bi-question-circle"></i>
                                             </a>
                                             <a href="{{ route('quizzes.edit', $quiz) }}" 
-                                               class="text-yellow-600 hover:text-yellow-900 mr-3">
-                                                Modifier
+                                               class="btn btn-sm btn-outline-warning"
+                                               title="Modifier">
+                                                <i class="bi bi-pencil"></i>
                                             </a>
-                                            <form action="{{ route('quizzes.destroy', $quiz) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce quiz ?')"
-                                                        class="text-red-600 hover:text-red-900">
-                                                    Supprimer
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                            Aucun quiz créé pour le moment.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="confirmDelete('{{ route('quizzes.destroy', $quiz) }}', '{{ $quiz->title }}')"
+                                                    title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
+                @if($quizzes->hasPages())
                     <div class="mt-4">
                         {{ $quizzes->links() }}
                     </div>
-                </div>
-            </div>
+                @endif
+            @endif
         </div>
     </div>
-</x-app-layout>
+</div>
+
+<script>
+function confirmDelete(url, title) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer l'évaluation "${title}" ?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.innerHTML = `
+            @csrf
+            @method('DELETE')
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+@endsection

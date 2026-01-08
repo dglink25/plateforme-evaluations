@@ -1,255 +1,482 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Modifier la question : {{ $quiz->title }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    @include('components.quizzes-nav')
+@section('title', 'Modifier la question : ' . $quiz->title)
 
-    <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
+@section('header', 'Modifier la question : ' . $quiz->title)
+
+@section('content')
+<div class="container py-4">
+    <!-- Navigation des quizzes -->
+    <nav class="nav nav-pills nav-fill mb-4 bg-light p-3 rounded">
+        <a class="nav-link" href="{{ route('quizzes.index') }}">
+            <i class="bi bi-list-check me-2"></i>Mes Évaluations
+        </a>
+        <a class="nav-link" href="{{ route('quizzes.questions', $quiz) }}">
+            <i class="bi bi-question-circle me-2"></i>Questions
+        </a>
+        <a class="nav-link active" href="#">
+            <i class="bi bi-pencil me-2"></i>Modifier Question
+        </a>
+        <a class="nav-link" href="{{ route('participant.quizzes.index') }}">
+            <i class="bi bi-clock me-2"></i>Passer un Quiz
+        </a>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Modifier la question</h5>
+                        <a href="{{ route('quizzes.questions', $quiz) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>Retour aux questions
+                        </a>
+                    </div>
+
                     <form method="POST" action="{{ route('questions.update', [$quiz, $question]) }}" id="question-form">
                         @csrf
                         @method('PUT')
-                        
-                        <div class="space-y-6">
-                            <!-- Type de question -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Type de question *
-                                </label>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3" x-data="{ type: '{{ old('type', $question->type) }}' }">
-                                    @foreach([
-                                        'multiple_choice' => ['label' => 'QCM (1 réponse)', 'color' => 'blue'],
-                                        'multiple_answer' => ['label' => 'Réponses multiples', 'color' => 'purple'],
-                                        'text' => ['label' => 'Réponse texte', 'color' => 'green'],
-                                        'file' => ['label' => 'Fichier', 'color' => 'yellow']
-                                    ] as $value => $info)
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="type" value="{{ $value }}" 
-                                                   class="sr-only peer" 
-                                                   x-model="type"
+
+                        <!-- Type de question -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-tag me-1"></i>Type de question *
+                            </label>
+                            <div class="row g-3">
+                                @foreach([
+                                    'multiple_choice' => ['label' => 'QCM (1 réponse)', 'icon' => 'bi-1-circle', 'color' => 'primary'],
+                                    'multiple_answer' => ['label' => 'Réponses multiples', 'icon' => 'bi-check2-all', 'color' => 'purple'],
+                                    'text' => ['label' => 'Réponse texte', 'icon' => 'bi-textarea-t', 'color' => 'success'],
+                                    'file' => ['label' => 'Fichier', 'icon' => 'bi-file-earmark-arrow-up', 'color' => 'warning']
+                                ] as $value => $info)
+                                    <div class="col-md-3 col-6">
+                                        <div class="form-check card-select">
+                                            <input class="form-check-input" 
+                                                   type="radio" 
+                                                   name="type" 
+                                                   id="type_{{ $value }}" 
+                                                   value="{{ $value }}"
                                                    {{ old('type', $question->type) == $value ? 'checked' : '' }}>
-                                            <div class="p-4 border-2 rounded-lg text-center transition-all
-                                                        peer-checked:border-{{ $info['color'] }}-500 peer-checked:bg-{{ $info['color'] }}-50
-                                                        hover:border-{{ $info['color'] }}-300 hover:bg-{{ $info['color'] }}-25">
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    {{ $info['label'] }}
+                                            <label class="form-check-label w-100" for="type_{{ $value }}">
+                                                <div class="card border h-100 text-center p-3 hover-shadow">
+                                                    <div class="mb-2">
+                                                        <i class="bi {{ $info['icon'] }} fs-3 text-{{ $info['color'] }}"></i>
+                                                    </div>
+                                                    <div class="fw-medium">{{ $info['label'] }}</div>
                                                 </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @error('type')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Texte de la question -->
+                        <div class="mb-4">
+                            <label for="question_text" class="form-label fw-semibold">
+                                <i class="bi bi-chat-square-text me-1"></i>Question *
+                            </label>
+                            <textarea name="question_text" 
+                                      id="question_text" 
+                                      rows="3"
+                                      class="form-control @error('question_text') is-invalid @enderror"
+                                      required>{{ old('question_text', $question->question_text) }}</textarea>
+                            @error('question_text')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Points -->
+                        <div class="mb-4">
+                            <label for="points" class="form-label fw-semibold">
+                                <i class="bi bi-star me-1"></i>Points *
+                            </label>
+                            <div class="input-group" style="width: 150px;">
+                                <input type="number" 
+                                       name="points" 
+                                       id="points" 
+                                       min="1" 
+                                       max="100"
+                                       class="form-control @error('points') is-invalid @enderror"
+                                       value="{{ old('points', $question->points) }}" 
+                                       required>
+                                <span class="input-group-text">point(s)</span>
+                            </div>
+                            @error('points')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <!-- Section Options -->
+                        <div id="options-section" class="mb-4 {{ in_array($question->type, ['multiple_choice', 'multiple_answer']) ? '' : 'd-none' }}">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-semibold mb-0">
+                                    <i class="bi bi-list-check me-1"></i>Options de réponse
+                                </label>
+                                <button type="button" id="add-option" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Ajouter une option
+                                </button>
+                            </div>
+                            
+                            <div id="options-container" class="space-y-2">
+                                @if(in_array($question->type, ['multiple_choice', 'multiple_answer']) && !empty($question->options))
+                                    @foreach($question->options as $index => $option)
+                                        <div class="option-item border rounded p-3">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-secondary me-3">{{ chr(65 + $index) }}</span>
+                                                <input type="text" 
+                                                       name="options[{{ $index }}]" 
+                                                       class="form-control me-3" 
+                                                       value="{{ old('options.' . $index, $option) }}"
+                                                       placeholder="Texte de l'option">
+                                                <div class="form-check me-3">
+                                                    @if($question->type === 'multiple_choice')
+                                                        <input class="form-check-input correct-answer" 
+                                                               type="radio" 
+                                                               name="correct_answer" 
+                                                               value="{{ $index }}" 
+                                                               id="correct_{{ $index }}"
+                                                               {{ old('correct_answer', $question->correct_answer) == $index ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="correct_{{ $index }}">
+                                                            Bonne réponse
+                                                        </label>
+                                                    @else
+                                                        <input class="form-check-input correct-answer" 
+                                                               type="checkbox" 
+                                                               name="correct_answers[]" 
+                                                               value="{{ $index }}" 
+                                                               id="correct_{{ $index }}"
+                                                               {{ in_array($index, (array)old('correct_answers', $question->correct_answer ?? [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="correct_{{ $index }}">
+                                                            Correct
+                                                        </label>
+                                                    @endif
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger remove-option"
+                                                        {{ count($question->options) <= 2 ? 'disabled' : '' }}>
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
-                                        </label>
+                                        </div>
                                     @endforeach
-                                </div>
-                                @error('type')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Texte de la question -->
-                            <div>
-                                <label for="question_text" class="block text-sm font-medium text-gray-700">
-                                    Question *
-                                </label>
-                                <textarea name="question_text" id="question_text" rows="3"
-                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                          required>{{ old('question_text', $question->question_text) }}</textarea>
-                                @error('question_text')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Points -->
-                            <div>
-                                <label for="points" class="block text-sm font-medium text-gray-700">
-                                    Points *
-                                </label>
-                                <input type="number" name="points" id="points" min="1" max="100"
-                                       class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                       value="{{ old('points', $question->points) }}" required>
-                                @error('points')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Options pour QCM et Réponses multiples -->
-                            <div id="options-section" x-data="questionOptions()" x-show="$store.global.questionType === 'multiple_choice' || $store.global.questionType === 'multiple_answer'">
-                                <div class="flex justify-between items-center mb-4">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Options de réponse
-                                    </label>
-                                    <button type="button" @click="addOption()"
-                                            class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
-                                        + Ajouter une option
-                                    </button>
-                                </div>
-                                
-                                <div class="space-y-3" id="options-container">
-                                    <!-- Les options seront ajoutées ici dynamiquement -->
-                                    <template x-for="(option, index) in options" :key="index">
-                                        <div class="flex items-center space-x-3 p-3 border border-gray-200 rounded">
-                                            <span class="text-gray-500" x-text="String.fromCharCode(65 + index)"></span>
-                                            <input type="text" x-model="options[index]" 
-                                                   :name="'options[' + index + ']'"
-                                                   placeholder="Texte de l'option"
-                                                   class="flex-1 border-gray-300 rounded shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
-                                            
-                                            <!-- Pour QCM (1 réponse) -->
-                                            <template x-if="$store.global.questionType === 'multiple_choice'">
-                                                <div class="flex items-center">
-                                                    @php
-                                                        $isCorrect = $question->type === 'multiple_choice' && $question->correct_answer == 'optionIndex';
-                                                    @endphp
-                                                    <input type="radio" name="correct_answer" :value="index" 
-                                                           :id="'correct_' + index"
-                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                                                           :checked="{{ $question->type === 'multiple_choice' && $question->correct_answer == 'loopIndex' ? 'true' : 'false' }}">
-                                                    <label :for="'correct_' + index" class="ml-2 text-sm text-gray-700">
-                                                        Bonne réponse
-                                                    </label>
-                                                </div>
-                                            </template>
-                                            
-                                            <!-- Pour réponses multiples -->
-                                            <template x-if="$store.global.questionType === 'multiple_answer'">
-                                                <div class="flex items-center">
-                                                    @php
-                                                        $isCorrectMulti = $question->type === 'multiple_answer' && in_array('optionIndex', (array)$question->correct_answer);
-                                                    @endphp
-                                                    <input type="checkbox" :name="'correct_answers[]'" :value="index" 
-                                                           :id="'correct_multi_' + index"
-                                                           class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
-                                                           :checked="{{ $isCorrectMulti ? 'true' : 'false' }}">
-                                                    <label :for="'correct_multi_' + index" class="ml-2 text-sm text-gray-700">
-                                                        Correct
-                                                    </label>
-                                                </div>
-                                            </template>
-                                            
-                                            <button type="button" @click="removeOption(index)"
-                                                    class="text-red-500 hover:text-red-700"
-                                                    x-show="options.length > 2">
-                                                ✕
+                                @else
+                                    <!-- Options par défaut -->
+                                    <div class="option-item border rounded p-3">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-secondary me-3">A</span>
+                                            <input type="text" 
+                                                   name="options[0]" 
+                                                   class="form-control me-3" 
+                                                   value="{{ old('options.0') }}"
+                                                   placeholder="Texte de l'option">
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input correct-answer" 
+                                                       type="radio" 
+                                                       name="correct_answer" 
+                                                       value="0" 
+                                                       id="correct_0">
+                                                <label class="form-check-label" for="correct_0">
+                                                    Bonne réponse
+                                                </label>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-option" disabled>
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
-                                    </template>
-                                </div>
-                                
-                                <!-- Messages d'erreur pour les options -->
-                                <div id="options-error" class="mt-2 text-sm text-red-600 hidden">
-                                    Au moins 2 options sont requises pour ce type de question.
-                                </div>
+                                    </div>
+                                    
+                                    <div class="option-item border rounded p-3">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-secondary me-3">B</span>
+                                            <input type="text" 
+                                                   name="options[1]" 
+                                                   class="form-control me-3" 
+                                                   value="{{ old('options.1') }}"
+                                                   placeholder="Texte de l'option">
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input correct-answer" 
+                                                       type="radio" 
+                                                       name="correct_answer" 
+                                                       value="1" 
+                                                       id="correct_1">
+                                                <label class="form-check-label" for="correct_1">
+                                                    Bonne réponse
+                                                </label>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-option">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-
-                            <!-- Réponse modèle pour texte -->
-                            <div id="text-answer-section" x-show="$store.global.questionType === 'text'">
-                                <label for="correct_answer_text" class="block text-sm font-medium text-gray-700">
-                                    Réponse modèle (pour la correction)
-                                </label>
-                                <textarea name="correct_answer_text" id="correct_answer_text" rows="4"
-                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">{{ old('correct_answer_text', $question->type === 'text' ? ($question->correct_answer['text'] ?? '') : '') }}</textarea>
-                                <p class="mt-1 text-sm text-gray-500">
-                                    Cette réponse sera utilisée comme référence pour la correction manuelle.
+                            
+                            <div id="multiple-answers-container" class="{{ $question->type === 'multiple_answer' ? '' : 'd-none' }}">
+                                <p class="text-muted small mb-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Cochez toutes les bonnes réponses :
                                 </p>
                             </div>
+                        </div>
 
-                            <!-- Pas de champ supplémentaire pour fichier -->
-                            <div id="file-section" x-show="$store.global.questionType === 'file'">
-                                <div class="p-4 bg-yellow-50 border border-yellow-200 rounded">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                            </svg>
-                                        </div>
-                                        <div class="ml-3">
-                                            <h3 class="text-sm font-medium text-yellow-800">
-                                                Question de type fichier
-                                            </h3>
-                                            <div class="mt-2 text-sm text-yellow-700">
-                                                <p>
-                                                    L'apprenant pourra télécharger un fichier (PDF, ZIP, image, etc.).
-                                                    La correction se fera manuellement.
-                                                </p>
-                                            </div>
-                                        </div>
+                        <!-- Section Réponse texte -->
+                        <div id="text-answer-section" class="mb-4 {{ $question->type === 'text' ? '' : 'd-none' }}">
+                            <label for="correct_answer_text" class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-1"></i>Réponse modèle (pour la correction)
+                            </label>
+                            <textarea name="correct_answer_text" 
+                                      id="correct_answer_text" 
+                                      rows="4"
+                                      class="form-control">{{ old('correct_answer_text', $question->type === 'text' && isset($question->correct_answer['text']) ? $question->correct_answer['text'] : '') }}</textarea>
+                            <div class="form-text">
+                                Cette réponse sera utilisée comme référence pour la correction manuelle.
+                            </div>
+                        </div>
+
+                        <!-- Section Fichier -->
+                        <div id="file-section" class="mb-4 {{ $question->type === 'file' ? '' : 'd-none' }}">
+                            <div class="alert alert-warning">
+                                <div class="d-flex">
+                                    <i class="bi bi-info-circle fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="alert-heading">Question de type fichier</h6>
+                                        <p class="mb-0">
+                                            L'apprenant pourra télécharger un fichier (PDF, ZIP, image, etc.).
+                                            La correction se fera manuellement.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Boutons d'action -->
-                            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                                <div>
-                                    <a href="{{ route('quizzes.questions', $quiz) }}" 
-                                       class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                                        Annuler
-                                    </a>
-                                </div>
-                                <div class="space-x-3">
-                                    <button type="submit" 
-                                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                        Mettre à jour
-                                    </button>
-                                </div>
-                            </div>
+                        <!-- Boutons d'action -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a href="{{ route('quizzes.questions', $quiz) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Mettre à jour
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    @push('scripts')
-    <script>
-        // Store global pour le type de question
-        document.addEventListener('alpine:init', () => {
-            Alpine.store('global', {
-                questionType: '{{ old('type', $question->type) }}'
-            });
-        });
+@push('scripts')
+<script>
+    // Fonction pour mettre à jour les sections visibles
+    function updateSections() {
+        const selectedType = document.querySelector('input[name="type"]:checked').value;
+        const optionsSection = document.getElementById('options-section');
+        const textAnswerSection = document.getElementById('text-answer-section');
+        const fileSection = document.getElementById('file-section');
+        const multipleAnswersContainer = document.getElementById('multiple-answers-container');
+        
+        // Masquer toutes les sections d'abord
+        optionsSection.classList.add('d-none');
+        textAnswerSection.classList.add('d-none');
+        fileSection.classList.add('d-none');
+        
+        // Afficher la section appropriée
+        if (selectedType === 'multiple_choice' || selectedType === 'multiple_answer') {
+            optionsSection.classList.remove('d-none');
+            
+            // Pour QCM, afficher les boutons radio
+            if (selectedType === 'multiple_choice') {
+                document.querySelectorAll('.correct-answer').forEach(el => {
+                    el.type = 'radio';
+                    el.name = 'correct_answer';
+                });
+                multipleAnswersContainer.classList.add('d-none');
+            }
+            // Pour réponses multiples, afficher les checkboxes
+            else if (selectedType === 'multiple_answer') {
+                document.querySelectorAll('.correct-answer').forEach(el => {
+                    el.type = 'checkbox';
+                    el.name = 'correct_answers[]';
+                });
+                multipleAnswersContainer.classList.remove('d-none');
+            }
+        } else if (selectedType === 'text') {
+            textAnswerSection.classList.remove('d-none');
+        } else if (selectedType === 'file') {
+            fileSection.classList.remove('d-none');
+        }
+    }
 
-        // Observer les changements de type
+    // Initialiser les sections
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSections();
+        
+        // Écouter les changements de type
         document.querySelectorAll('input[name="type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                Alpine.store('global').questionType = this.value;
+            radio.addEventListener('change', updateSections);
+        });
+        
+        // Gestion des options
+        let optionCount = {{ in_array($question->type, ['multiple_choice', 'multiple_answer']) && !empty($question->options) ? count($question->options) : 2 }};
+        const optionLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        
+        // Ajouter une option
+        document.getElementById('add-option')?.addEventListener('click', function() {
+            if (optionCount >= optionLetters.length) return;
+            
+            const container = document.getElementById('options-container');
+            const optionItem = document.createElement('div');
+            optionItem.className = 'option-item border rounded p-3 mt-2';
+            
+            optionItem.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-3">${optionLetters[optionCount]}</span>
+                    <input type="text" 
+                           name="options[${optionCount}]" 
+                           class="form-control me-3" 
+                           placeholder="Texte de l'option">
+                    <div class="form-check me-3">
+                        <input class="form-check-input correct-answer" 
+                               type="${document.querySelector('input[name="type"]:checked').value === 'multiple_choice' ? 'radio' : 'checkbox'}" 
+                               name="${document.querySelector('input[name="type"]:checked').value === 'multiple_choice' ? 'correct_answer' : 'correct_answers[]'}" 
+                               value="${optionCount}" 
+                               id="correct_${optionCount}">
+                        <label class="form-check-label" for="correct_${optionCount}">
+                            ${document.querySelector('input[name="type"]:checked').value === 'multiple_choice' ? 'Bonne réponse' : 'Correct'}
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-option">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(optionItem);
+            optionCount++;
+            
+            // Activer les boutons de suppression
+            document.querySelectorAll('.remove-option').forEach(btn => {
+                btn.disabled = false;
             });
         });
-
-        // Gestion des options avec données existantes
-        function questionOptions() {
-            return {
-                options: @json(old('options', $question->options ?? ['', ''])),
-                addOption() {
-                    this.options.push('');
-                },
-                removeOption(index) {
-                    if (this.options.length > 2) {
-                        this.options.splice(index, 1);
+        
+        // Supprimer une option
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-option') || 
+                e.target.closest('.remove-option')) {
+                const btn = e.target.classList.contains('remove-option') ? e.target : e.target.closest('.remove-option');
+                const optionItem = btn.closest('.option-item');
+                
+                if (document.querySelectorAll('.option-item').length > 2) {
+                    optionItem.remove();
+                    optionCount--;
+                    
+                    // Mettre à jour les lettres et les valeurs
+                    updateOptionLabels();
+                    
+                    // Désactiver le bouton de suppression s'il ne reste que 2 options
+                    if (document.querySelectorAll('.option-item').length <= 2) {
+                        document.querySelectorAll('.remove-option').forEach(btn => {
+                            btn.disabled = true;
+                        });
                     }
                 }
             }
-        }
-
-        // Validation avant soumission
-        document.getElementById('question-form').addEventListener('submit', function(e) {
-            const type = Alpine.store('global').questionType;
-            const optionsSection = document.getElementById('options-section');
-            
-            if ((type === 'multiple_choice' || type === 'multiple_answer') && optionsSection) {
-                const options = Array.from(document.querySelectorAll('input[name^="options["]'))
-                    .map(input => input.value.trim())
-                    .filter(value => value !== '');
+        });
+        
+        // Mettre à jour les labels des options
+        function updateOptionLabels() {
+            const items = document.querySelectorAll('.option-item');
+            items.forEach((item, index) => {
+                const badge = item.querySelector('.badge');
+                const input = item.querySelector('input[name^="options"]');
+                const correctInput = item.querySelector('.correct-answer');
                 
-                if (options.length < 2) {
+                badge.textContent = optionLetters[index];
+                badge.setAttribute('data-index', index);
+                
+                if (input) {
+                    input.name = `options[${index}]`;
+                }
+                
+                if (correctInput) {
+                    correctInput.value = index;
+                    correctInput.id = `correct_${index}`;
+                    correctInput.nextElementSibling.htmlFor = `correct_${index}`;
+                }
+            });
+        }
+    });
+
+    // Validation du formulaire
+    document.getElementById('question-form').addEventListener('submit', function(e) {
+        const type = document.querySelector('input[name="type"]:checked').value;
+        
+        // Validation pour QCM et réponses multiples
+        if (type === 'multiple_choice' || type === 'multiple_answer') {
+            const options = document.querySelectorAll('input[name^="options"]');
+            const filledOptions = Array.from(options).filter(opt => opt.value.trim() !== '');
+            
+            if (filledOptions.length < 2) {
+                e.preventDefault();
+                alert('Veuillez remplir au moins 2 options de réponse.');
+                return false;
+            }
+            
+            // Validation pour QCM : une réponse sélectionnée
+            if (type === 'multiple_choice') {
+                const selected = document.querySelector('input[name="correct_answer"]:checked');
+                if (!selected) {
                     e.preventDefault();
-                    document.getElementById('options-error').classList.remove('hidden');
-                    optionsSection.scrollIntoView({ behavior: 'smooth' });
+                    alert('Veuillez sélectionner la bonne réponse pour cette question QCM.');
                     return false;
                 }
             }
-        });
-    </script>
-    @endpush
-</x-app-layout>
+            
+            // Validation pour réponses multiples : au moins une réponse sélectionnée
+            if (type === 'multiple_answer') {
+                const selected = document.querySelectorAll('input[name="correct_answers[]"]:checked');
+                if (selected.length === 0) {
+                    e.preventDefault();
+                    alert('Veuillez sélectionner au moins une bonne réponse pour cette question à réponses multiples.');
+                    return false;
+                }
+            }
+        }
+    });
+</script>
+
+<style>
+.card-select .form-check-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.card-select .form-check-label .card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.card-select .form-check-input:checked + .form-check-label .card {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.option-item {
+    transition: all 0.2s ease;
+}
+
+.option-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+</style>
+@endpush
+@endsection
