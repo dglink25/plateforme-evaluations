@@ -31,10 +31,18 @@ class ParticipantController extends Controller{
      */
     public function show(Quiz $quiz)
     {
+        
 
         // Vérifier si l'utilisateur a déjà participé
         $participation = $quiz->getUserParticipation(Auth::id());
         
+        if ($participation->shouldAutoComplete()) {
+        $participation->autoComplete();
+            $participation->save();
+            
+            return redirect()->route('quiz.results', ['quiz' => $quiz, 'participation' => $participation])
+                ->with('info', 'Le temps est écoulé. Votre quiz a été soumis automatiquement.');
+        }
         return view('participant.quizzes.show', compact('quiz', 'participation'));
     }
 
@@ -108,12 +116,19 @@ class ParticipantController extends Controller{
     /**
      * Soumettre les réponses
      */
-    public function submit(Request $request, Quiz $quiz, Participation $participation)
-    {
-        // Vérifier les autorisations
-        if ($participation->user_id !== Auth::id() || $participation->quiz_id !== $quiz->id) {
-            abort(403);
-        }
+    public function submit(Request $request, Quiz $quiz, Participation $participation){
+            // Vérifier les autorisations
+            if ($participation->user_id !== Auth::id() || $participation->quiz_id !== $quiz->id) {
+                    abort(403);
+                }
+
+                if ($participation->shouldAutoComplete()) {
+                $participation->autoComplete();
+                $participation->save();
+                
+                return redirect()->route('quiz.results', ['quiz' => $quiz, 'participation' => $participation])
+                    ->with('info', 'Le temps est écoulé. Votre quiz a été soumis automatiquement.');
+            }
 
         // Vérifier si le quiz est encore en cours
         if ($participation->status !== 'in_progress') {

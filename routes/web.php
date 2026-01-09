@@ -47,6 +47,21 @@ Route::middleware('auth')->group(function () {
             Route::get('/result', [ParticipantController::class, 'result'])->name('quizzes.result');
         });
     });
+
+    Route::get('/quizzes/{quiz}/participations', [QuizController::class, 'participations'])
+        ->name('quizzes.participations');
+    
+    Route::get('/quizzes/{quiz}/participations/{participation}', [QuizController::class, 'showParticipation'])
+        ->name('quizzes.participation.show');
+    
+    Route::post('/quizzes/{quiz}/participations/{participation}/correct', [QuizController::class, 'correctAnswer'])
+        ->name('quizzes.participation.correct');
+    
+    Route::post('/quizzes/{quiz}/participations/{participation}/validate', [QuizController::class, 'validateCorrections'])
+        ->name('quizzes.participation.validate');
+
+    Route::post('/quizzes/{quiz}/participations/{participation}/auto-correct', [QuizController::class, 'autoCorrectAll'])
+        ->name('quizzes.participation.auto-correct');
 });
 
 require __DIR__.'/auth.php';

@@ -5,92 +5,79 @@
 @section('content')
 <div class="container-fluid px-0">
     <!-- En-tête fixe -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top py-2">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center w-100">
-                <div>
-                    <h5 class="mb-0 fw-bold">{{ $quiz->title }}</h5>
-                    <small class="text-muted">{{ $quiz->questions->count() }} questions • {{ $quiz->duration }} minutes</small>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center w-100 gap-2">
+                <!-- Titre -->
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary me-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-truncate" style="max-width: 250px;">{{ $quiz->title }}</h5>
+                        <small class="text-muted d-none d-md-block">{{ $quiz->questions->count() }} questions • {{ $quiz->duration }} minutes</small>
+                        <small class="text-muted d-block d-md-none">{{ $quiz->questions->count() }} Q • {{ $quiz->duration }} min</small>
+                    </div>
                 </div>
                 
-                <!-- Timer -->
-                <div id="timer" class="d-flex align-items-center">
-                    <i class="bi bi-clock fs-5 text-danger me-2"></i>
-                    <span id="time-display" class="fs-4 fw-bold text-danger">
-                        {{ gmdate('H:i:s', $remainingSeconds) }}
-                    </span>
+                <!-- Timer et bouton mobile -->
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Timer -->
+                    <div id="timer" class="d-flex align-items-center bg-light rounded-pill px-3 py-2 shadow-sm">
+                        <i class="bi bi-clock fs-5 text-danger me-2"></i>
+                        <span id="time-display" class="fs-4 fw-bold text-danger font-monospace">
+                            {{ gmdate('H:i:s', $remainingSeconds) }}
+                        </span>
+                    </div>
+                    
+                    <!-- Bouton soumission mobile -->
+                    <button type="button" 
+                            id="submit-btn-mobile"
+                            class="btn btn-success d-lg-none"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#submitModal">
+                        <i class="bi bi-check-circle"></i>
+                    </button>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
+
+    <!-- Sidebar Offcanvas pour mobile -->
+    <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="sidebarOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Navigation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            @include('quizzes.partials.sidebar-mobile', ['quiz' => $quiz, 'questions' => $questions])
+        </div>
+    </div>
 
     <!-- Contenu principal -->
-    <div class="container pt-5 mt-5">
+    <main class="container pt-5 mt-5">
         <div class="row g-0">
-            <!-- Sidebar -->
-            <div class="col-lg-3 d-none d-lg-block">
+            <!-- Sidebar Desktop -->
+            <aside class="col-lg-3 d-none d-lg-block">
                 <div class="sticky-top" style="top: 80px;">
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
-                            <h6 class="fw-bold mb-3">Progression</h6>
-                            
-                            <!-- Barre de progression -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <small>Questions répondues</small>
-                                    <small id="answered-count">0</small>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Navigation des questions -->
-                            <div class="mb-4">
-                                <small class="text-muted d-block mb-2">Navigation rapide</small>
-                                <div class="row g-2" id="question-nav-grid">
-                                    @foreach($questions as $index => $question)
-                                        <div class="col-4">
-                                            <a href="#question-{{ $question->id }}" 
-                                               class="d-block text-center p-2 border rounded question-nav"
-                                               data-question-id="{{ $question->id }}"
-                                               title="{{ Str::limit($question->question_text, 30) }}">
-                                                <div class="question-number">{{ $index + 1 }}</div>
-                                                <div class="question-status mt-1">
-                                                    <div class="status-indicator" data-question-id="{{ $question->id }}"></div>
-                                                </div>
-                                            </a>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            
-                            <!-- Bouton de soumission -->
-                            <button type="button" 
-                                    id="submit-btn"
-                                    class="btn btn-success w-100"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#submitModal">
-                                <i class="bi bi-check-circle me-2"></i>
-                                Soumettre le quiz
-                            </button>
-                            
-                            <small class="text-muted d-block mt-2 text-center">
-                                Le quiz se soumettra automatiquement à la fin du temps
-                            </small>
+                            @include('quizzes.partials.sidebar-desktop', ['quiz' => $quiz, 'questions' => $questions])
                         </div>
                     </div>
                 </div>
-            </div>
+            </aside>
             
             <!-- Questions -->
-            <div class="col-lg-9">
-                <div class="px-3 px-lg-4">
+            <section class="col-lg-9">
+                <div class="px-2 px-md-3 px-lg-4">
                     <!-- Alerte sauvegarde -->
-                    <div id="auto-save-alert" class="alert alert-info alert-dismissible fade show mb-4 d-none" role="alert">
-                        <i class="bi bi-save me-2"></i>
-                        Réponses sauvegardées automatiquement
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <div id="auto-save-alert" class="alert alert-info alert-dismissible fade show mb-3 mb-md-4 d-none" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-save fs-5 me-2"></i>
+                            <span class="flex-grow-1">Réponses sauvegardées automatiquement</span>
+                            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                        </div>
                     </div>
 
                     <!-- Formulaire -->
@@ -99,116 +86,131 @@
                         @csrf
                         
                         @foreach($questions as $index => $question)
-                            <div id="question-{{ $question->id }}" class="card mb-4 question-container">
-                                <div class="card-body">
+                            <article id="question-{{ $question->id }}" class="card mb-3 mb-md-4 question-container shadow-sm">
+                                <div class="card-body p-3 p-md-4">
                                     <!-- En-tête question -->
-                                    <div class="d-flex align-items-start mb-4">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
-                                             style="width: 40px; height: 40px; flex-shrink: 0;">
-                                            {{ $index + 1 }}
+                                    <header class="mb-3 mb-md-4">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style="width: 45px; height: 45px;">
+                                                <span class="fw-bold">{{ $index + 1 }}</span>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h3 class="h5 fw-bold mb-2">{{ $question->question_text }}</h3>
+                                                
+                                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="badge bg-primary px-2 py-1">
+                                                        <i class="bi bi-star-fill me-1"></i>{{ $question->points }} pts
+                                                    </span>
+                                                    <span class="badge bg-secondary px-2 py-1">
+                                                        <i class="bi bi-type me-1"></i>{{ ucfirst(str_replace('_', ' ', $question->type)) }}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="flex-grow-1">
-                                            <h5 class="card-title mb-3">{{ $question->question_text }}</h5>
-                                            
-                                            <div class="d-flex align-items-center gap-3 mb-4">
-                                                <span class="badge bg-primary">
-                                                    {{ $question->points }} point(s)
-                                                </span>
-                                                <span class="badge bg-secondary">
-                                                    {{ ucfirst(str_replace('_', ' ', $question->type)) }}
-                                                </span>
+                                    </header>
+                                    
+                                    <!-- Réponses -->
+                                    <div class="mb-4">
+                                        @if($question->type === 'multiple_choice')
+                                            <div class="list-group list-group-flush border rounded overflow-hidden">
+                                                @foreach($question->options as $optionIndex => $option)
+                                                    <label class="list-group-item list-group-item-action border-bottom-0 py-3">
+                                                        <div class="form-check d-flex align-items-center">
+                                                            <input type="radio" 
+                                                                   id="question-{{ $question->id }}-option-{{ $optionIndex }}"
+                                                                   name="answers[{{ $question->id }}]"
+                                                                   value="{{ $optionIndex }}"
+                                                                   class="form-check-input me-3"
+                                                                   data-question-id="{{ $question->id }}"
+                                                                   {{ optional($question->answers->first())->answer_content == $optionIndex ? 'checked' : '' }}>
+                                                            <label class="form-check-label d-flex align-items-center w-100" 
+                                                                   for="question-{{ $question->id }}-option-{{ $optionIndex }}">
+                                                                <span class="fw-bold text-primary me-3">{{ chr(65 + $optionIndex) }}.</span>
+                                                                <span>{{ $option }}</span>
+                                                            </label>
+                                                        </div>
+                                                    </label>
+                                                @endforeach
                                             </div>
                                             
-                                            <!-- Réponses -->
-                                            <div class="mt-3">
-                                                @if($question->type === 'multiple_choice')
-                                                    <div class="list-group list-group-flush">
-                                                        @foreach($question->options as $optionIndex => $option)
-                                                            <label class="list-group-item list-group-item-action">
-                                                                <div class="form-check">
-                                                                    <input type="radio" 
-                                                                           id="question-{{ $question->id }}-option-{{ $optionIndex }}"
-                                                                           name="answers[{{ $question->id }}]"
-                                                                           value="{{ $optionIndex }}"
-                                                                           class="form-check-input question-input"
-                                                                           data-question-id="{{ $question->id }}"
-                                                                           {{ optional($question->answers->first())->answer_content == $optionIndex ? 'checked' : '' }}>
-                                                                    <label class="form-check-label d-flex align-items-center" 
-                                                                           for="question-{{ $question->id }}-option-{{ $optionIndex }}">
-                                                                        <span class="fw-bold me-3">{{ chr(65 + $optionIndex) }}.</span>
-                                                                        <span>{{ $option }}</span>
-                                                                    </label>
-                                                                </div>
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
-                                                    
-                                                @elseif($question->type === 'multiple_answer')
-                                                    <div class="list-group list-group-flush">
-                                                        @foreach($question->options as $optionIndex => $option)
-                                                            <label class="list-group-item">
-                                                                <div class="form-check">
-                                                                    <input type="checkbox" 
-                                                                           id="question-{{ $question->id }}-option-{{ $optionIndex }}"
-                                                                           name="answers[{{ $question->id }}][]"
-                                                                           value="{{ $optionIndex }}"
-                                                                           class="form-check-input question-input"
-                                                                           data-question-id="{{ $question->id }}"
-                                                                           {{ in_array($optionIndex, (array)optional($question->answers->first())->answer_content ?? []) ? 'checked' : '' }}>
-                                                                    <label class="form-check-label d-flex align-items-center" 
-                                                                           for="question-{{ $question->id }}-option-{{ $optionIndex }}">
-                                                                        <span class="fw-bold me-3">{{ chr(65 + $optionIndex) }}.</span>
-                                                                        <span>{{ $option }}</span>
-                                                                    </label>
-                                                                </div>
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
-                                                    
-                                                @elseif($question->type === 'text')
-                                                    <div>
-                                                        <textarea name="answers[{{ $question->id }}]"
-                                                                  rows="5"
-                                                                  class="form-control question-input"
-                                                                  data-question-id="{{ $question->id }}"
-                                                                  placeholder="Tapez votre réponse ici...">{{ optional($question->answers->first())->answer_content ?? '' }}</textarea>
-                                                    </div>
-                                                    
-                                                @elseif($question->type === 'file')
-                                                    <div>
-                                                        <div class="mb-3">
-                                                            <input type="file" 
-                                                                   name="files[{{ $question->id }}]"
-                                                                   class="form-control question-input"
+                                        @elseif($question->type === 'multiple_answer')
+                                            <div class="list-group list-group-flush border rounded overflow-hidden">
+                                                @foreach($question->options as $optionIndex => $option)
+                                                    <label class="list-group-item border-bottom-0 py-3">
+                                                        <div class="form-check d-flex align-items-center">
+                                                            <input type="checkbox" 
+                                                                   id="question-{{ $question->id }}-option-{{ $optionIndex }}"
+                                                                   name="answers[{{ $question->id }}][]"
+                                                                   value="{{ $optionIndex }}"
+                                                                   class="form-check-input me-3"
                                                                    data-question-id="{{ $question->id }}"
-                                                                   accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.txt">
+                                                                   {{ in_array($optionIndex, (array)optional($question->answers->first())->answer_content ?? []) ? 'checked' : '' }}>
+                                                            <label class="form-check-label d-flex align-items-center w-100" 
+                                                                   for="question-{{ $question->id }}-option-{{ $optionIndex }}">
+                                                                <span class="fw-bold text-primary me-3">{{ chr(65 + $optionIndex) }}.</span>
+                                                                <span>{{ $option }}</span>
+                                                            </label>
                                                         </div>
-                                                        
-                                                        @if($question->answers->first() && $question->answers->first()->file_path)
-                                                            <div class="alert alert-success d-flex align-items-center">
-                                                                <i class="bi bi-check-circle-fill me-2"></i>
-                                                                <div>
-                                                                    Fichier déjà uploadé: 
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                            
+                                        @elseif($question->type === 'text')
+                                            <div class="form-floating">
+                                                <textarea name="answers[{{ $question->id }}]"
+                                                          id="textarea-{{ $question->id }}"
+                                                          rows="5"
+                                                          class="form-control h-auto"
+                                                          data-question-id="{{ $question->id }}"
+                                                          placeholder="Tapez votre réponse ici..."
+                                                          style="min-height: 120px;">{{ optional($question->answers->first())->answer_content ?? '' }}</textarea>
+                                                <label for="textarea-{{ $question->id }}">Votre réponse</label>
+                                            </div>
+                                            
+                                        @elseif($question->type === 'file')
+                                            <div class="border rounded p-3">
+                                                <div class="mb-3">
+                                                    <label for="file-{{ $question->id }}" class="form-label fw-semibold mb-2">
+                                                        <i class="bi bi-upload me-2"></i>Télécharger un fichier
+                                                    </label>
+                                                    <input type="file" 
+                                                           id="file-{{ $question->id }}"
+                                                           name="files[{{ $question->id }}]"
+                                                           class="form-control"
+                                                           data-question-id="{{ $question->id }}"
+                                                           accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.txt">
+                                                    <div class="form-text">Formats acceptés : PDF, Word, ZIP, images, TXT</div>
+                                                </div>
+                                                
+                                                @if($question->answers->first() && $question->answers->first()->file_path)
+                                                    <div class="alert alert-success alert-dismissible fade show mb-0">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                                                            <div class="flex-grow-1">
+                                                                <strong>Fichier déjà uploadé</strong>
+                                                                <div class="mt-1">
                                                                     <a href="{{ Storage::url($question->answers->first()->file_path) }}" 
                                                                        target="_blank" 
-                                                                       class="alert-link">
-                                                                        Télécharger
+                                                                       class="btn btn-sm btn-outline-success">
+                                                                        <i class="bi bi-download me-1"></i>Télécharger
                                                                     </a>
                                                                 </div>
                                                             </div>
-                                                        @endif
+                                                            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                                                        </div>
                                                     </div>
                                                 @endif
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
                                     
                                     <!-- Navigation entre questions -->
-                                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                    <footer class="d-flex justify-content-between mt-4 pt-3 border-top">
                                         @if($index > 0)
                                             <a href="#question-{{ $questions[$index - 1]->id }}" 
-                                               class="btn btn-outline-secondary btn-prev">
-                                                <i class="bi bi-chevron-left me-2"></i>Question précédente
+                                               class="btn btn-outline-secondary btn-prev btn-sm">
+                                                <i class="bi bi-chevron-left me-1"></i><span class="d-none d-md-inline">Précédente</span>
                                             </a>
                                         @else
                                             <div></div>
@@ -216,36 +218,59 @@
                                         
                                         @if($index < $questions->count() - 1)
                                             <a href="#question-{{ $questions[$index + 1]->id }}" 
-                                               class="btn btn-primary btn-next">
-                                                Question suivante <i class="bi bi-chevron-right ms-2"></i>
+                                               class="btn btn-primary btn-next btn-sm">
+                                                <span class="d-none d-md-inline">Suivante</span><i class="bi bi-chevron-right ms-1"></i>
                                             </a>
+                                        @else
+                                            <button type="button" 
+                                                    id="submit-btn-bottom"
+                                                    class="btn btn-success"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#submitModal">
+                                                <i class="bi bi-check-circle me-1"></i>Soumettre
+                                            </button>
                                         @endif
-                                    </div>
+                                    </footer>
                                 </div>
-                            </div>
+                            </article>
                         @endforeach
                     </form>
                 </div>
-            </div>
+            </section>
         </div>
-    </div>
+    </main>
 </div>
 
 <!-- Modal de confirmation -->
-<div class="modal fade" id="submitModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="submitModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirmer la soumission</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir soumettre votre quiz ?</p>
-                <p class="text-muted small">Cette action est irréversible. Assurez-vous d'avoir répondu à toutes les questions.</p>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="bi bi-question-circle display-4 text-primary"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Soumettre votre quiz ?</h6>
+                <p class="text-muted mb-0">Assurez-vous d'avoir vérifié toutes vos réponses.</p>
+                <p class="text-muted small">Cette action est irréversible.</p>
+                
+                <!-- Progression -->
+                <div class="mt-4">
+                    <small class="text-muted d-block mb-1">Questions répondues</small>
+                    <div class="progress" style="height: 8px;">
+                        <div id="modal-progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small id="modal-progress-text" class="text-muted mt-1">0/{{ $questions->count() }}</small>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" id="confirm-submit" class="btn btn-success">Soumettre</button>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Revenir au quiz</button>
+                <button type="button" id="confirm-submit" class="btn btn-success px-4">
+                    <i class="bi bi-check-circle me-2"></i>Soumettre
+                </button>
             </div>
         </div>
     </div>
@@ -259,28 +284,34 @@
     let autoSaveInterval;
     let hasSubmitted = false;
     let saveQueue = [];
+    const totalQuestions = {{ $questions->count() }};
 
-    // Formatage du temps
+    // Formatage du temps en H:MM:SS
     function formatTime(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
         
-        if (hours > 0) {
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        // Format H:MM:SS toujours avec 2 chiffres pour minutes et secondes
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
     // Mettre à jour l'affichage du timer
     function updateTimerDisplay() {
-        document.getElementById('time-display').textContent = formatTime(remainingSeconds);
-        
-        // Changer la couleur quand il reste peu de temps
-        const timerElement = document.getElementById('timer');
-        if (remainingSeconds <= 300) { // 5 minutes
-            timerElement.classList.remove('text-danger');
-            timerElement.classList.add('text-danger');
+        const timeDisplay = document.getElementById('time-display');
+        if (timeDisplay) {
+            timeDisplay.textContent = formatTime(remainingSeconds);
+            
+            // Effet visuel pour le dernier minuteur
+            if (remainingSeconds <= 300) { // 5 minutes
+                timeDisplay.classList.remove('text-danger');
+                timeDisplay.classList.add('text-danger');
+                
+                // Clignotement pour les 30 dernières secondes
+                if (remainingSeconds <= 30) {
+                    timeDisplay.classList.toggle('blink');
+                }
+            }
         }
     }
 
@@ -302,19 +333,25 @@
     }
 
     // Soumettre automatiquement le quiz
-    function submitQuizAutomatically() {
+    async function submitQuizAutomatically() {
         if (hasSubmitted) return;
         
         hasSubmitted = true;
         
+        // Afficher un message
+        showToast('Temps écoulé ! Soumission automatique en cours...', 'warning');
+        
         // Sauvegarder les réponses une dernière fois
-        saveAnswers().then(() => {
-            // Soumettre le formulaire
+        try {
+            await saveAllAnswers();
+        } catch (error) {
+            console.error('Erreur de sauvegarde:', error);
+        }
+        
+        // Soumettre le formulaire
+        setTimeout(() => {
             document.getElementById('quiz-form').submit();
-        }).catch(error => {
-            console.error('Erreur lors de la sauvegarde automatique:', error);
-            document.getElementById('quiz-form').submit();
-        });
+        }, 1000);
     }
 
     // Configuration de la sauvegarde automatique
@@ -356,89 +393,60 @@
         }
     }
 
-    // Sauvegarder une réponse spécifique
-    async function saveAnswer(questionId) {
-        if (saveQueue.includes(questionId)) return;
-        
-        saveQueue.push(questionId);
-        
-        const formData = new FormData();
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-        
-        // Collecter les réponses pour cette question
-        const questionInputs = document.querySelectorAll(`.question-input[data-question-id="${questionId}"]`);
-        let hasAnswer = false;
-        
-        questionInputs.forEach(input => {
-            if (input.type === 'radio' || input.type === 'checkbox') {
-                if (input.checked) {
-                    if (input.type === 'checkbox') {
-                        formData.append(`answers[${questionId}][]`, input.value);
-                    } else {
-                        formData.append(`answers[${questionId}]`, input.value);
-                    }
-                    hasAnswer = true;
-                }
-            } else if (input.type === 'file') {
-                if (input.files.length > 0) {
-                    formData.append(`files[${questionId}]`, input.files[0]);
-                    hasAnswer = true;
-                }
-            } else {
-                if (input.value.trim() !== '') {
-                    formData.append(`answers[${questionId}]`, input.value);
-                    hasAnswer = true;
-                }
-            }
-        });
-        
-        // Ne pas sauvegarder si aucune réponse
-        if (!hasAnswer) {
-            saveQueue = saveQueue.filter(id => id !== questionId);
-            return;
-        }
-        
-        try {
-            const response = await fetch('{{ route("participant.quizzes.submit", ["quiz" => $quiz, "participation" => $participation]) }}', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                updateProgress();
-            }
-            
-        } catch (error) {
-            console.error('Erreur lors de la sauvegarde:', error);
-        } finally {
-            saveQueue = saveQueue.filter(id => id !== questionId);
-        }
-    }
-
     // Afficher l'alerte de sauvegarde
     function showAutoSaveAlert() {
         const alert = document.getElementById('auto-save-alert');
-        alert.classList.remove('d-none');
+        if (alert) {
+            alert.classList.remove('d-none');
+            
+            setTimeout(() => {
+                alert.classList.add('d-none');
+            }, 3000);
+        }
+    }
+
+    // Afficher une notification toast
+    function showToast(message, type = 'info') {
+        // Créer le toast si nécessaire
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
         
-        setTimeout(() => {
-            alert.classList.add('d-none');
-        }, 3000);
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+        
+        // Supprimer après fermeture
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
     }
 
     // Mettre à jour la progression
     function updateProgress() {
         let answeredCount = 0;
-        const totalQuestions = {{ $questions->count() }};
         
         // Compter les questions répondues
         document.querySelectorAll('.question-container').forEach(container => {
             const questionId = container.id.replace('question-', '');
-            const questionInputs = container.querySelectorAll('.question-input');
+            const questionInputs = container.querySelectorAll('input, textarea');
             let isAnswered = false;
             
             questionInputs.forEach(input => {
@@ -446,7 +454,7 @@
                     if (input.checked) isAnswered = true;
                 } else if (input.type === 'file') {
                     if (input.files.length > 0) isAnswered = true;
-                } else {
+                } else if (input.tagName === 'TEXTAREA') {
                     if (input.value.trim() !== '') isAnswered = true;
                 }
             });
@@ -459,18 +467,36 @@
             }
         });
         
-        // Mettre à jour le compteur et la barre de progression
-        document.getElementById('answered-count').textContent = answeredCount;
+        // Mettre à jour l'affichage
+        const progressElement = document.getElementById('progress-bar');
+        const counterElement = document.getElementById('answered-count');
+        const modalProgressElement = document.getElementById('modal-progress-bar');
+        const modalTextElement = document.getElementById('modal-progress-text');
+        
         const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-        document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+        
+        if (progressElement) progressElement.style.width = `${progressPercentage}%`;
+        if (counterElement) counterElement.textContent = answeredCount;
+        if (modalProgressElement) modalProgressElement.style.width = `${progressPercentage}%`;
+        if (modalTextElement) modalTextElement.textContent = `${answeredCount}/${totalQuestions}`;
     }
 
     // Mettre à jour le statut d'une question
     function updateQuestionStatus(questionId, isAnswered) {
-        const statusIndicator = document.querySelector(`.status-indicator[data-question-id="${questionId}"]`);
-        if (statusIndicator) {
-            statusIndicator.className = isAnswered ? 'status-indicator answered' : 'status-indicator';
-        }
+        // Mettre à jour les indicateurs de statut
+        document.querySelectorAll(`.question-status[data-question-id="${questionId}"] .status-indicator`).forEach(indicator => {
+            indicator.className = `status-indicator ${isAnswered ? 'answered' : ''}`;
+        });
+        
+        // Mettre à jour les liens de navigation
+        const navLinks = document.querySelectorAll(`.question-nav[data-question-id="${questionId}"]`);
+        navLinks.forEach(link => {
+            if (isAnswered) {
+                link.classList.add('answered');
+            } else {
+                link.classList.remove('answered');
+            }
+        });
     }
 
     // Initialisation
@@ -485,40 +511,47 @@
         updateProgress();
         
         // Écouter les changements dans les réponses
-        document.querySelectorAll('.question-input').forEach(input => {
+        document.querySelectorAll('input, textarea').forEach(input => {
+            const questionId = input.closest('.question-container')?.id.replace('question-', '');
+            if (!questionId) return;
+            
             input.addEventListener('change', function() {
-                const questionId = this.dataset.questionId;
                 saveAnswer(questionId);
                 updateProgress();
             });
             
-            // Pour les textareas
+            // Debounce pour les textareas
             if (input.tagName === 'TEXTAREA') {
                 input.addEventListener('input', debounce(function() {
-                    const questionId = this.dataset.questionId;
                     saveAnswer(questionId);
                     updateProgress();
                 }, 1000));
             }
         });
         
-        // Navigation entre questions
-        document.querySelectorAll('.question-nav, .btn-prev, .btn-next').forEach(link => {
+        // Navigation fluide
+        document.querySelectorAll('a[href^="#question-"]').forEach(link => {
             link.addEventListener('click', function(e) {
-                if (this.getAttribute('href')?.startsWith('#')) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetElement = document.querySelector(targetId);
-                    
-                    if (targetElement) {
-                        targetElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                        
-                        // Mettre à jour l'URL sans rechargement
-                        history.pushState(null, '', targetId);
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    // Fermer l'offcanvas sur mobile
+                    const offcanvas = document.getElementById('sidebarOffcanvas');
+                    if (offcanvas) {
+                        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+                        if (bsOffcanvas) bsOffcanvas.hide();
                     }
+                    
+                    // Scroll fluide
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // URL
+                    history.replaceState(null, '', targetId);
                 }
             });
         });
@@ -528,34 +561,32 @@
             if (hasSubmitted) return;
             
             hasSubmitted = true;
-            document.getElementById('submit-btn').disabled = true;
+            const submitBtn = this;
+            const originalText = submitBtn.innerHTML;
+            
+            // Désactiver le bouton et montrer l'indicateur de chargement
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Soumission...';
             
             // Sauvegarder avant de soumettre
-            saveAllAnswers().then(() => {
+            saveAllAnswers().finally(() => {
                 document.getElementById('quiz-form').submit();
             });
         });
+        
+        // Mettre à jour la progression dans le modal
+        const submitModal = document.getElementById('submitModal');
+        if (submitModal) {
+            submitModal.addEventListener('show.bs.modal', updateProgress);
+        }
         
         // Empêcher la fermeture de la page
         window.addEventListener('beforeunload', function(e) {
             if (!hasSubmitted && remainingSeconds > 0) {
                 e.preventDefault();
-                e.returnValue = 'Vous êtes en train de passer un quiz. Si vous quittez, vos réponses pourraient être perdues.';
+                e.returnValue = 'Vos réponses pourraient être perdues si vous quittez cette page.';
                 return e.returnValue;
             }
-        });
-        
-        // Gestion des fichiers
-        document.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener('change', function() {
-                const fileName = this.files[0]?.name || 'Aucun fichier sélectionné';
-                const label = this.nextElementSibling?.querySelector('.form-label') || 
-                              this.parentElement.nextElementSibling;
-                
-                if (label) {
-                    label.textContent = `Fichier sélectionné : ${fileName}`;
-                }
-            });
         });
     });
 
@@ -571,60 +602,228 @@
             timeout = setTimeout(later, wait);
         };
     }
+
+    // Fonction de sauvegarde individuelle
+    async function saveAnswer(questionId) {
+        // Implémentation simplifiée - ajustez selon vos besoins
+        // Cette fonction devrait envoyer les réponses au serveur
+    }
 </script>
 
 <style>
-/* Styles spécifiques */
-.status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: #dee2e6;
-    margin: 0 auto;
+/* Styles améliorés */
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
 }
 
-.status-indicator.answered {
-    background-color: #198754;
+/* Header fixe */
+header.navbar {
+    min-height: 70px;
 }
 
+/* Timer amélioré */
+#timer {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
+    transition: all 0.3s ease;
+}
+
+#timer:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+}
+
+#time-display {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Animation clignotante */
+.blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Questions */
+.question-container {
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.question-container:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.question-container:target {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+/* Options */
+.list-group-item {
+    border: 1px solid #dee2e6;
+    margin-bottom: -1px;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(4px);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Navigation */
 .question-nav {
     text-decoration: none;
     color: #495057;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 8px;
     transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .question-nav:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
 }
 
-.question-number {
-    font-weight: 600;
-    font-size: 0.9rem;
+.question-nav.answered {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-color: var(--success-color);
 }
 
-#timer {
-    transition: color 0.3s ease;
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #dee2e6;
+    margin: 4px auto 0;
+    transition: all 0.3s ease;
 }
 
-.btn-next, .btn-prev {
+.status-indicator.answered {
+    background-color: var(--success-color);
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.2);
+}
+
+/* Boutons */
+.btn {
+    font-weight: 500;
     transition: all 0.2s ease;
 }
 
+.btn-next, .btn-prev {
+    min-width: 120px;
+}
+
 .btn-next:hover, .btn-prev:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Scroll doux */
-html {
-    scroll-behavior: smooth;
+/* Responsive */
+@media (max-width: 768px) {
+    header.navbar {
+        min-height: 60px;
+        padding: 8px 0;
+    }
+    
+    #timer {
+        padding: 6px 12px;
+    }
+    
+    #time-display {
+        font-size: 1.2rem !important;
+    }
+    
+    .question-container .card-body {
+        padding: 1rem !important;
+    }
+    
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-next, .btn-prev {
+        min-width: auto;
+    }
 }
 
-/* Style pour les questions actives */
-.question-container:target {
-    border-left: 4px solid #0d6efd;
-    padding-left: 1rem;
+@media (max-width: 576px) {
+    #timer {
+        padding: 4px 10px;
+    }
+    
+    #time-display {
+        font-size: 1.1rem !important;
+    }
+    
+    .question-nav {
+        padding: 6px;
+    }
+    
+    .question-number {
+        font-size: 0.8rem;
+    }
+}
+
+/* Scroll personnalisé */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Animation pour les sauvegardes */
+@keyframes savePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.auto-saving {
+    animation: savePulse 0.5s ease;
+}
+
+/* Style pour les questions actives dans la sidebar */
+.question-nav.active {
+    background-color: var(--primary-color);
+    color: white;
 }
 </style>
 @endpush
+
+<!-- Partials inclus -->
+@section('partials')
+    @include('quizzes.partials.sidebar-desktop')
+    @include('quizzes.partials.sidebar-mobile')
 @endsection

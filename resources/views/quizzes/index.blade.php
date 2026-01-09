@@ -50,6 +50,7 @@
                                 <th>Titre</th>
                                 <th>Durée</th>
                                 <th>Questions</th>
+                                <th>Participants</th>
                                 <th>Statut</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -76,12 +77,27 @@
                                         </span>
                                     </td>
                                     <td>
+                                        @if($quiz->participations_count > 0)
+                                            <a href="{{ route('quizzes.participations', $quiz) }}" 
+                                               class="badge bg-primary text-decoration-none">
+                                                {{ $quiz->participations_count }} participants
+                                            </a>
+                                        @else
+                                            <span class="badge bg-secondary">0 participant</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <span class="badge {{ $quiz->is_published ? 'bg-success' : 'bg-warning' }}">
                                             {{ $quiz->is_published ? 'Publié' : 'Brouillon' }}
                                         </span>
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group" role="group">
+                                            <a href="{{ route('quizzes.participations', $quiz) }}" 
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Voir les participants">
+                                                <i class="bi bi-people"></i>
+                                            </a>
                                             <a href="{{ route('quizzes.questions', $quiz) }}" 
                                                class="btn btn-sm btn-outline-primary"
                                                title="Voir les questions">
