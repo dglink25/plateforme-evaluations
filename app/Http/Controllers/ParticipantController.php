@@ -26,23 +26,31 @@ class ParticipantController extends Controller{
         return view('participant.quizzes.index', compact('quizzes', 'userParticipations'));
     }
 
-    /**
-     * Afficher les détails d'un quiz avant de commencer
-     */
-    public function show(Quiz $quiz)
-    {
-        
-
-        // Vérifier si l'utilisateur a déjà participé
+    public function show(Quiz $quiz) {
+        // Récupérer la participation de l'utilisateur (peut être null)
         $participation = $quiz->getUserParticipation(Auth::id());
-        
-        if ($participation->shouldAutoComplete()) {
-        $participation->autoComplete();
-            $participation->save();
-            
-            return redirect()->route('quiz.results', ['quiz' => $quiz, 'participation' => $participation])
-                ->with('info', 'Le temps est écoulé. Votre quiz a été soumis automatiquement.');
+
+        // Vérifier que la participation existe avant toute action
+        if ($participation) {
+
+            // Vérifier si le quiz doit être auto-complété
+            if ($participation->shouldAutoComplete()) {
+                $participation->autoComplete();
+                $participation->save();
+
+                return redirect()
+                    ->route('quiz.results', [
+                        'quiz' => $quiz,
+                        'participation' => $participation,
+                    ])
+                    ->with(
+                        'info',
+                        'Le temps est écoulé. Votre quiz a été soumis automatiquement.'
+                    );
+            }
         }
+
+        // Affichage normal (quiz pas encore commencé ou en cours)
         return view('participant.quizzes.show', compact('quiz', 'participation'));
     }
 
